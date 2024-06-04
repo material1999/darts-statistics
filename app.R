@@ -14,7 +14,7 @@ library(shinydashboard)
 
 # Load data --------------------------------------------------------------------
 
-setwd("~/Documents/Programming/R/darts_csuka/")
+setwd("~/Documents/Programming/R/darts-statistics/")
 
 results = tibble()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
