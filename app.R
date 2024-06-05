@@ -23,10 +23,10 @@ for (filename in filenames) {
   numbers <- regmatches(filename, gregexpr("[[:digit:]]+", filename))
   results.current = read_excel(filename) %>%
     select("Phase", "Team 1", "Team 2", "Result team 1", "Result team 2") %>%
-    mutate("Round" = as.numeric(unlist(numbers))[4]) %>%
-    mutate("Year" = as.numeric(unlist(numbers))[1]) %>%
-    mutate("Month" = as.numeric(unlist(numbers))[2]) %>%
-    mutate("Day" = as.numeric(unlist(numbers))[3])
+    mutate("Round" = as.character(unlist(numbers))[4]) %>%
+    mutate("Year" = as.character(unlist(numbers))[1]) %>%
+    mutate("Month" = as.character(unlist(numbers))[2]) %>%
+    mutate("Day" = as.character(unlist(numbers))[3])
   results <- bind_rows(results, results.current)
 }
 
@@ -66,7 +66,7 @@ ui <- fluidPage(
                          inputId = "season",
                          label = "Season:",
                          choices = unique(results$Year),
-                         selected = 2024
+                         selected = max(results$Year)
                        )),
       
       conditionalPanel(condition = "output.showRound == true",
@@ -85,7 +85,7 @@ ui <- fluidPage(
       tabsetPanel(id = "plotTabs",
                   tabPanel("Current season", value = 1, plotOutput("plot1", height = "600px")),
                   tabPanel("Past seasons", value = 2, plotlyOutput("plot2", height = "600px")),
-                  tabPanel("Round results", value = 3, plotlyOutput("plot3", height = "600px")),
+                  tabPanel("Round results", value = 3, tableOutput("plot3")),
                   tabPanel("All time table", value = 4, plotlyOutput("plot4", height = "600px")),
                   tabPanel("Rivalries", value = 5, plotlyOutput("plot5", height = "600px")),
                   tabPanel("Player bio", value = 6, plotOutput("plot6", height = "600px"))
@@ -118,8 +118,15 @@ server <- function(input, output, session) {
     renderTable({results[1:5, 1:2]}, colnames = FALSE)
   }
   
+  roundResults <- reactive({
+    results.round = results %>%
+      filter(Round == input$round) %>%
+      arrange(Phase)
+  })
+  
   output$infoTable <- seasonInfoTable()
   
+  output$plot3 <- renderTable(roundResults(), colnames = TRUE)
 }
 
 # Create a Shiny app object ----------------------------------------------------
