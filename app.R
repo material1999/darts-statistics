@@ -24,7 +24,7 @@ for (filename in filenames) {
   results.current = read_excel(filename) %>%
     select("Phase", "Team 1", "Team 2", "Result team 1", "Result team 2") %>%
     mutate("Round" = as.character(unlist(numbers))[4]) %>%
-    mutate("Year" = as.character(unlist(numbers))[1]) %>%
+    mutate("Season" = as.character(unlist(numbers))[1]) %>%
     mutate("Month" = as.character(unlist(numbers))[2]) %>%
     mutate("Day" = as.character(unlist(numbers))[3])
   results <- bind_rows(results, results.current)
@@ -65,8 +65,8 @@ ui <- fluidPage(
                        selectInput(
                          inputId = "season",
                          label = "Season:",
-                         choices = unique(results$Year),
-                         selected = max(results$Year)
+                         choices = unique(results$Season),
+                         selected = as.character(max(results$Season))
                        )),
       
       conditionalPanel(condition = "output.showRound == true",
@@ -75,7 +75,7 @@ ui <- fluidPage(
                          inputId = "round",
                          label = "Round:",
                          choices = unique(results$Round),
-                         selected = 1
+                         selected = "1"
                        )),
       
     ),
@@ -120,7 +120,7 @@ server <- function(input, output, session) {
   
   roundResults <- reactive({
     results.round = results %>%
-      filter(Round == input$round) %>%
+      filter(Season == input$season, Round == input$round) %>%
       arrange(Phase)
   })
   
