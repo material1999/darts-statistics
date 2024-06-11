@@ -75,7 +75,7 @@ ui <- fluidPage(
                        selectInput(
                          inputId = "round",
                          label = "Round:",
-                         choices = sort(unique(results$round)),
+                         choices = NULL
                        )),
       
       conditionalPanel(condition = "output.showPlayer == true",
@@ -118,6 +118,13 @@ server <- function(input, output, session) {
     choices <- sort(unique(c(results$player_2, results$player_1)))
     updated_choices <- setdiff(choices, selected)
     updateSelectInput(session, "rival", choices = updated_choices)
+  })
+  
+  observeEvent(input$season, {
+    selected_season <- input$season
+    round_choices <- sort(unique(results$round[results$season == selected_season]))
+    max_round <- max(round_choices)
+    updateSelectInput(session, "round", choices = round_choices, selected = max_round)
   })
   
   output$showInfo <- reactive({
