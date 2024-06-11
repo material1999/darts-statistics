@@ -44,7 +44,7 @@ ui <- fluidPage(
   
   tags$style(HTML("
     table, th, td {
-      border: none !important; /* Hide table borders */
+      border: none !important;
     }
     table {
       border-collapse: collapse !important;
@@ -57,14 +57,13 @@ ui <- fluidPage(
   
   sidebarLayout(
   
-    sidebarPanel(
+    sidebarPanel(width = 3,
       
       conditionalPanel(condition = "output.showInfo == true",
-                       br(),
+                       helpText("Season info"),
                        tableOutput("infoTable")),
       
       conditionalPanel(condition = "output.showSeason == true",
-                       br(),
                        selectInput(
                          inputId = "season",
                          label = "Season:",
@@ -73,25 +72,37 @@ ui <- fluidPage(
                        )),
       
       conditionalPanel(condition = "output.showRound == true",
-                       br(),
                        selectInput(
                          inputId = "round",
                          label = "Round:",
-                         choices = unique(results$round),
-                         selected = "1"
+                         choices = sort(unique(results$round)),
+                       )),
+      
+      conditionalPanel(condition = "output.showPlayer == true",
+                       selectInput(
+                         inputId = "player",
+                         label = "Player:",
+                         choices = sort(unique(c(results$player_2, results$player_1)))
+                       )),
+      
+      conditionalPanel(condition = "output.showRival == true",
+                       selectInput(
+                         inputId = "rival",
+                         label = "Rival:",
+                         choices = sort(unique(c(results$player_2, results$player_1))),
                        )),
       
     ),
     
-    mainPanel(
+    mainPanel(width = 9,
       
       tabsetPanel(id = "plotTabs",
-                  tabPanel("Current season", value = 1, plotOutput("plot1", height = "600px")),
-                  tabPanel("Past seasons", value = 2, plotlyOutput("plot2", height = "600px")),
+                  tabPanel("Current season", value = 1, htmlOutput("workInProgress1")),
+                  tabPanel("Past seasons", value = 2, htmlOutput("workInProgress2")),
                   tabPanel("Round results", value = 3, tableOutput("anotherTable"), DTOutput("plot3")),
-                  tabPanel("All time table", value = 4, plotlyOutput("plot4", height = "600px")),
-                  tabPanel("Rivalries", value = 5, plotlyOutput("plot5", height = "600px")),
-                  tabPanel("Player bio", value = 6, plotOutput("plot6", height = "600px"))
+                  tabPanel("All time table", value = 4, htmlOutput("workInProgress3")),
+                  tabPanel("Rivalries", value = 5, htmlOutput("workInProgress4")),
+                  tabPanel("Player bio", value = 6, htmlOutput("workInProgress5"))
       )
     )
   )
@@ -101,6 +112,13 @@ ui <- fluidPage(
 # Define server ----------------------------------------------------------------
 
 server <- function(input, output, session) {
+  
+  observe({
+    selected <- input$player
+    choices <- sort(unique(c(results$player_2, results$player_1)))
+    updated_choices <- setdiff(choices, selected)
+    updateSelectInput(session, "rival", choices = updated_choices)
+  })
   
   output$showInfo <- reactive({
     ifelse(input$plotTabs == 1 | input$plotTabs == 2, TRUE, FALSE)
@@ -117,6 +135,16 @@ server <- function(input, output, session) {
   })
   outputOptions(output, "showRound", suspendWhenHidden = FALSE)
   
+  output$showPlayer <- reactive({
+    ifelse(input$plotTabs == 5 | input$plotTabs == 6, TRUE, FALSE)
+  })
+  outputOptions(output, "showPlayer", suspendWhenHidden = FALSE)
+  
+  output$showRival <- reactive({
+    ifelse(input$plotTabs == 5, TRUE, FALSE)
+  })
+  outputOptions(output, "showRival", suspendWhenHidden = FALSE)
+  
   seasonInfoTable <- function() {
     renderTable({results[1:5, 1:2]}, colnames = FALSE)
   }
@@ -126,6 +154,10 @@ server <- function(input, output, session) {
       filter(season == input$season, round == input$round) %>%
       arrange(phase)
   })
+  
+  output$workInProgress1 <- output$workInProgress2 <- output$workInProgress3 <-
+    output$workInProgress4 <- output$workInProgress5 <-
+    renderText("<br> Work in progress...<br>")
   
   output$infoTable <- seasonInfoTable()
   
