@@ -228,8 +228,30 @@ server <- function(input, output, session) {
     results.table <- results.table %>%
       arrange(desc(Points), desc(`Leg Difference`), desc(`Legs Won`))
     
+    # Sort the table based on score against each other if needed
+    for (i in 2:nrow(results.table)) {
+      if (results.table$Points[i-1] == results.table$Points[i] &
+          results.table$`Leg Difference`[i-1] == results.table$`Leg Difference`[i] &
+          results.table$`Legs Won`[i-1] == results.table$`Legs Won`[i]) {
+        change1 = results.table$Player[i-1]
+        change2 = results.table$Player[i]
+        for (j in 1:nrow(results.round)) {
+          player1 <- results.round$`Player 1`[j]
+          player2 <- results.round$`Player 2`[j]
+          result1 <- as.numeric(sub("\\*", "", results.round$`Legs 1`[j]))
+          result2 <- as.numeric(sub("\\*", "", results.round$`Legs 2`[j]))
+          if ((player1 == change1 & player2 == change2 & result2 > result1) |
+              player1 == change2 & player2 == change1 & result1 > result2) {
+            # print(paste(change1, "*change*", change2))
+            tmp_row  <- results.table[i-1,]
+            results.table[i-1,]  <- results.table[i,]
+            results.table[i,]  <- tmp_row
+          }
+        }
+      }
+    }
     
-    
+    # Add row numbers
     results.table <- results.table %>%
       mutate("#" = as.character(row_number())) %>%
       select("#", everything())
