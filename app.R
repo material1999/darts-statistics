@@ -88,7 +88,7 @@ ui <- fluidPage(
       tabsetPanel(id = "plotTabs",
                   tabPanel("Current season", value = 1, plotOutput("plot1", height = "600px")),
                   tabPanel("Past seasons", value = 2, plotlyOutput("plot2", height = "600px")),
-                  tabPanel("Round results", value = 3, DTOutput("plot3")),
+                  tabPanel("Round results", value = 3, tableOutput("anotherTable"), DTOutput("plot3")),
                   tabPanel("All time table", value = 4, plotlyOutput("plot4", height = "600px")),
                   tabPanel("Rivalries", value = 5, plotlyOutput("plot5", height = "600px")),
                   tabPanel("Player bio", value = 6, plotOutput("plot6", height = "600px"))
@@ -128,6 +128,8 @@ server <- function(input, output, session) {
   })
   
   output$infoTable <- seasonInfoTable()
+  
+  output$anotherTable <- seasonInfoTable()
   
   output$plot3 <- renderDT({
     datatable(roundResults(), options = list(pageLength = 10))
