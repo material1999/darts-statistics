@@ -22,15 +22,21 @@ results = tibble()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
 
 for (filename in filenames) {
+  
   numbers <- regmatches(filename, gregexpr("[[:digit:]]+", filename))
+  
   results.current = read_excel(filename) %>%
     select("Phase", "Team 1", "Team 2", "Result team 1", "Result team 2") %>%
     mutate("Round" = as.character(unlist(numbers))[4]) %>%
     mutate("Season" = as.character(unlist(numbers))[1]) %>%
     mutate("Month" = as.character(unlist(numbers))[2]) %>%
-    mutate("Day" = as.character(unlist(numbers))[3])
+    mutate("Day" = as.character(unlist(numbers))[3]) %>%
+    mutate("Result team 1" = sub("\\*", "", `Result team 1`)) %>%
+    mutate("Result team 2" = sub("\\*", "", `Result team 2`))
+  
   colnames(results.current) <- c("Phase", "Player 1", "Player 2", "Legs 1", "Legs 2",
                                  "Round", "Season", "Month", "Day")
+  
   results <- bind_rows(results, results.current)
 }
 
@@ -44,12 +50,6 @@ rm(results.current)
 ui <- fluidPage(
   
   tags$style(HTML("
-    table, th, td {
-      border: none !important;
-    }
-    table {
-      border-collapse: collapse !important;
-    }
     .nav {
       margin-bottom: 20px;
     }
@@ -60,6 +60,11 @@ ui <- fluidPage(
     }
     .table-container {
       padding: 20px;
+    }
+    .table-container-2 {
+      padding-left: 20px;
+      padding-right: 20px;
+      padding-bottom: 20px;
     }
   ")),
   
@@ -73,7 +78,7 @@ ui <- fluidPage(
       
       conditionalPanel(condition = "output.showInfo == true",
                        helpText("Season info"),
-                       tableOutput("infoTable")),
+                       reactableOutput("infoTable")),
       
       conditionalPanel(condition = "output.showSeason == true",
                        selectInput(
@@ -109,18 +114,23 @@ ui <- fluidPage(
     mainPanel(width = 9,
       
       tabsetPanel(id = "plotTabs",
-                  tabPanel("Current season", value = 1, htmlOutput("workInProgress1")),
-                  tabPanel("Past seasons", value = 2, htmlOutput("workInProgress2")),
+                  tabPanel("Current season", value = 1,
+                           div(class = "text-container", p("Work in progress..."))),
+                  tabPanel("Past seasons", value = 2,
+                           div(class = "text-container", p("Work in progress..."))),
                   tabPanel("Round results", value = 3,
                            div(class = "text-container", strong("Group phase")),
                            div(class = "table-container", reactableOutput("roundTable")),
                            div(class = "text-container", strong("Knockout phase")),
                            div(class = "table-container", strong("TODO")),
                            div(class = "text-container", strong("Match results")),
-                           div(class = "table-container", DTOutput("roundMatches"))),
-                  tabPanel("All time table", value = 4, htmlOutput("workInProgress3")),
-                  tabPanel("Rivalries", value = 5, htmlOutput("workInProgress4")),
-                  tabPanel("Player bio", value = 6, htmlOutput("workInProgress5"))
+                           div(class = "table-container-2", reactableOutput("roundMatches"))),
+                  tabPanel("All time table", value = 4,
+                           div(class = "text-container", p("Work in progress..."))),
+                  tabPanel("Rivalries", value = 5,
+                           div(class = "text-container", p("Work in progress..."))),
+                  tabPanel("Player bio", value = 6,
+                           div(class = "text-container", p("Work in progress...")))
       )
     )
   )
@@ -170,13 +180,23 @@ server <- function(input, output, session) {
   })
   outputOptions(output, "showRival", suspendWhenHidden = FALSE)
   
-  output$workInProgress1 <- output$workInProgress2 <- output$workInProgress3 <-
-    output$workInProgress4 <- output$workInProgress5 <-
-    renderText("<br> Work in progress...<br>")
-  
-  output$infoTable <- renderTable({
-    results[1:5, 1:2]
-  }, colnames = FALSE)
+  calculateSeasonInfo <- function() {
+    
+    info.table <- data.frame(
+      Year = "asd",
+      Rounds = "asd",
+      `Macthes played` = 0,
+      `Legs played` = 0,
+      `Unique players` = 0,
+      `180s` = 0,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    print(info.table)
+    
+    return(info.table)
+  }
   
   calculateRoundTable <- function() {
     
@@ -201,8 +221,8 @@ server <- function(input, output, session) {
     for (i in 1:nrow(results.round)) {
       player1 <- results.round$`Player 1`[i]
       player2 <- results.round$`Player 2`[i]
-      result1 <- as.numeric(sub("\\*", "", results.round$`Legs 1`[i]))
-      result2 <- as.numeric(sub("\\*", "", results.round$`Legs 2`[i]))
+      result1 <- as.numeric(results.round$`Legs 1`[i])
+      result2 <- as.numeric(results.round$`Legs 2`[i])
 
       # Update legs won and lost
       results.table[results.table$Player == player1, "Legs Won"] <-
@@ -255,9 +275,9 @@ server <- function(input, output, session) {
           if ((player1 == change1 & player2 == change2 & result2 > result1) |
               player1 == change2 & player2 == change1 & result1 > result2) {
             # print(paste(change1, "*change*", change2))
-            tmp_row  <- results.table[i-1,]
-            results.table[i-1,]  <- results.table[i,]
-            results.table[i,]  <- tmp_row
+            tmp_row <- results.table[i-1,]
+            results.table[i-1,] <- results.table[i,]
+            results.table[i,] <- tmp_row
           }
         }
       }
@@ -270,6 +290,33 @@ server <- function(input, output, session) {
     
     return(results.table)
   }
+  
+  calculateRoundMatches <- function() {
+    
+    results.matches <- results %>%
+      filter(Season == input$season, Round == input$round) %>% arrange(Phase)
+    
+    return(results.matches)
+  }
+  
+  output$infoTable <- renderReactable({
+    df <- data.frame(
+      RowHeader = c("Header1", "Header2", "Header3"),
+      Column1 = c(1, 2, 3),
+      Column2 = c(4, 5, 6)
+    )
+    reactable(
+      df,
+      columns = list(
+        RowHeader = colDef(name = " ", width = 150),
+        Column1 = colDef(name = "Column 1"),
+        Column2 = colDef(name = "Column 2")
+      ),
+      rownames = FALSE,
+      highlight = TRUE
+    )
+    # reactable(calculateSeasonInfo())
+  })
   
   output$roundTable <- renderReactable({
     reactable(
@@ -293,14 +340,25 @@ server <- function(input, output, session) {
     )
   })
   
-  output$roundMatches <- renderDT({
-    datatable(
-      results %>%
-        filter(Season == input$season, Round == input$round) %>%
-        arrange(Phase),
-      options = list(pageLength = 10)
+  output$roundMatches <- renderReactable({
+    reactable(
+      calculateRoundMatches(),
+      columns = list(
+        Phase = colDef(minWidth = 100, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Player 2` = colDef(minWidth = 100, align = "center"),
+        `Legs 1` = colDef(minWidth = 75, align = "center"),
+        `Legs 2` = colDef(minWidth = 75, align = "center"),
+        Round = colDef(maxWidth = 75, align = "center"),
+        Season = colDef(maxWidth = 75, align = "center"),
+        Month = colDef(maxWidth = 75, align = "center"),
+        Day = colDef(maxWidth = 50, align = "center")
+      ),
+      searchable = TRUE, minRows = 10, highlight = TRUE, outlined = TRUE,
+      striped = TRUE, sortable = FALSE, borderless = TRUE
     )
   })
+  
 }
 
 # Create a Shiny app object ----------------------------------------------------
