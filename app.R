@@ -50,6 +50,14 @@ ui <- fluidPage(
     table {
       border-collapse: collapse !important;
     }
+    .nav {
+      margin-bottom: 20px;
+    }
+    .text-container {
+      padding-left: 20px;
+      padding-right: 20px;
+      font-size: 2em;
+    }
     .table-container {
       padding: 20px;
     }
@@ -104,7 +112,11 @@ ui <- fluidPage(
                   tabPanel("Current season", value = 1, htmlOutput("workInProgress1")),
                   tabPanel("Past seasons", value = 2, htmlOutput("workInProgress2")),
                   tabPanel("Round results", value = 3,
+                           div(class = "text-container", strong("Group phase")),
                            div(class = "table-container", reactableOutput("roundTable")),
+                           div(class = "text-container", strong("Knockout phase")),
+                           div(class = "table-container", strong("TODO")),
+                           div(class = "text-container", strong("Match results")),
                            div(class = "table-container", DTOutput("roundMatches"))),
                   tabPanel("All time table", value = 4, htmlOutput("workInProgress3")),
                   tabPanel("Rivalries", value = 5, htmlOutput("workInProgress4")),
