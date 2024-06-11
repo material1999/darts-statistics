@@ -18,7 +18,6 @@ library(reactable)
 
 setwd("~/Documents/Programming/R/darts-statistics/")
 
-results = tibble()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
 
 for (filename in filenames) {
@@ -37,6 +36,7 @@ for (filename in filenames) {
   colnames(results.current) <- c("Phase", "Player 1", "Player 2", "Legs 1", "Legs 2",
                                  "Round", "Season", "Month", "Day")
   
+  results <- tibble()
   results <- bind_rows(results, results.current)
 }
 
@@ -296,6 +296,10 @@ server <- function(input, output, session) {
     results.matches <- results %>%
       filter(Season == input$season, Round == input$round) %>% arrange(Phase)
     
+    results.matches <- results.matches %>%
+      mutate("#" = as.character(row_number())) %>%
+      select("#", everything())
+    
     return(results.matches)
   }
   
@@ -322,7 +326,7 @@ server <- function(input, output, session) {
     reactable(
       calculateRoundTable(),
       columns = list(
-        "#" = colDef(maxWidth = 50),
+        "#" = colDef(maxWidth = 50, align = "center"),
         Player = colDef(minWidth = 275),
         Points = colDef(maxWidth = 75, align = "center",
                         style = function(value) {
@@ -344,9 +348,10 @@ server <- function(input, output, session) {
     reactable(
       calculateRoundMatches(),
       columns = list(
-        Phase = colDef(minWidth = 100, align = "center"),
-        `Player 1` = colDef(minWidth = 100, align = "center"),
-        `Player 2` = colDef(minWidth = 100, align = "center"),
+        "#" = colDef(maxWidth = 50, align = "center"),
+        Phase = colDef(minWidth = 100),
+        `Player 1` = colDef(minWidth = 100),
+        `Player 2` = colDef(minWidth = 100),
         `Legs 1` = colDef(minWidth = 75, align = "center"),
         `Legs 2` = colDef(minWidth = 75, align = "center"),
         Round = colDef(maxWidth = 75, align = "center"),
