@@ -1,7 +1,7 @@
 # Install and load packages ----------------------------------------------------
 
 # install.packages(c("tidyverse", "ggplot2", "shiny", "gridExtra", "plotly",
-#                    "treemapify", "readxl", "shinydashboard", "DT"))
+#                    "treemapify", "readxl", "shinydashboard", "DT", "reactable"))
 
 library(tidyverse)
 library(ggplot2)
@@ -12,6 +12,7 @@ library(treemapify)
 library(readxl)
 library(shinydashboard)
 library(DT)
+library(reactable)
 
 # Load data --------------------------------------------------------------------
 
@@ -48,6 +49,9 @@ ui <- fluidPage(
     }
     table {
       border-collapse: collapse !important;
+    }
+    .table-container {
+      padding: 20px;
     }
   ")),
   
@@ -99,7 +103,9 @@ ui <- fluidPage(
       tabsetPanel(id = "plotTabs",
                   tabPanel("Current season", value = 1, htmlOutput("workInProgress1")),
                   tabPanel("Past seasons", value = 2, htmlOutput("workInProgress2")),
-                  tabPanel("Round results", value = 3, tableOutput("anotherTable"), DTOutput("plot3")),
+                  tabPanel("Round results", value = 3,
+                           div(class = "table-container", reactableOutput("roundTable")),
+                           div(class = "table-container", DTOutput("roundMatches"))),
                   tabPanel("All time table", value = 4, htmlOutput("workInProgress3")),
                   tabPanel("Rivalries", value = 5, htmlOutput("workInProgress4")),
                   tabPanel("Player bio", value = 6, htmlOutput("workInProgress5"))
@@ -156,6 +162,10 @@ server <- function(input, output, session) {
     renderTable({results[1:5, 1:2]}, colnames = FALSE)
   }
   
+  roundTable <- function() {
+    renderReactable(reactable(results[1:5, 1:2]))
+  }
+  
   roundResults <- reactive({
     results.round = results %>%
       filter(season == input$season, round == input$round) %>%
@@ -168,9 +178,9 @@ server <- function(input, output, session) {
   
   output$infoTable <- seasonInfoTable()
   
-  output$anotherTable <- seasonInfoTable()
+  output$roundTable <- roundTable()
   
-  output$plot3 <- renderDT({
+  output$roundMatches <- renderDT({
     datatable(roundResults(), options = list(pageLength = 10))
   })
 }
