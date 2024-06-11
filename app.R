@@ -1,7 +1,7 @@
 # Install and load packages ----------------------------------------------------
 
 # install.packages(c("tidyverse", "ggplot2", "shiny", "gridExtra", "plotly",
-#                    "treemapify", "readxl", "shinydashboard"))
+#                    "treemapify", "readxl", "shinydashboard", "DT"))
 
 library(tidyverse)
 library(ggplot2)
@@ -11,6 +11,7 @@ library(plotly)
 library(treemapify)
 library(readxl)
 library(shinydashboard)
+library(DT)
 
 # Load data --------------------------------------------------------------------
 
@@ -27,6 +28,8 @@ for (filename in filenames) {
     mutate("Season" = as.character(unlist(numbers))[1]) %>%
     mutate("Month" = as.character(unlist(numbers))[2]) %>%
     mutate("Day" = as.character(unlist(numbers))[3])
+  colnames(results.current) <- c("phase", "player_1", "player_2", "legs_1", "legs_2",
+                                 "round", "season", "month", "day")
   results <- bind_rows(results, results.current)
 }
 
@@ -65,8 +68,8 @@ ui <- fluidPage(
                        selectInput(
                          inputId = "season",
                          label = "Season:",
-                         choices = unique(results$Season),
-                         selected = as.character(max(results$Season))
+                         choices = unique(results$season),
+                         selected = as.character(max(results$season))
                        )),
       
       conditionalPanel(condition = "output.showRound == true",
@@ -74,7 +77,7 @@ ui <- fluidPage(
                        selectInput(
                          inputId = "round",
                          label = "Round:",
-                         choices = unique(results$Round),
+                         choices = unique(results$round),
                          selected = "1"
                        )),
       
@@ -85,7 +88,7 @@ ui <- fluidPage(
       tabsetPanel(id = "plotTabs",
                   tabPanel("Current season", value = 1, plotOutput("plot1", height = "600px")),
                   tabPanel("Past seasons", value = 2, plotlyOutput("plot2", height = "600px")),
-                  tabPanel("Round results", value = 3, tableOutput("plot3")),
+                  tabPanel("Round results", value = 3, DTOutput("plot3")),
                   tabPanel("All time table", value = 4, plotlyOutput("plot4", height = "600px")),
                   tabPanel("Rivalries", value = 5, plotlyOutput("plot5", height = "600px")),
                   tabPanel("Player bio", value = 6, plotOutput("plot6", height = "600px"))
@@ -120,13 +123,15 @@ server <- function(input, output, session) {
   
   roundResults <- reactive({
     results.round = results %>%
-      filter(Season == input$season, Round == input$round) %>%
-      arrange(Phase)
+      filter(season == input$season, round == input$round) %>%
+      arrange(phase)
   })
   
   output$infoTable <- seasonInfoTable()
   
-  output$plot3 <- renderTable(roundResults(), colnames = TRUE)
+  output$plot3 <- renderDT({
+    datatable(roundResults(), options = list(pageLength = 10))
+  })
 }
 
 # Create a Shiny app object ----------------------------------------------------
