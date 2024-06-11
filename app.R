@@ -29,8 +29,8 @@ for (filename in filenames) {
     mutate("Season" = as.character(unlist(numbers))[1]) %>%
     mutate("Month" = as.character(unlist(numbers))[2]) %>%
     mutate("Day" = as.character(unlist(numbers))[3])
-  colnames(results.current) <- c("phase", "player_1", "player_2", "legs_1", "legs_2",
-                                 "round", "season", "month", "day")
+  colnames(results.current) <- c("Phase", "Player 1", "Player 2", "Legs 1", "Legs 2",
+                                 "Round", "Season", "Month", "Day")
   results <- bind_rows(results, results.current)
 }
 
@@ -71,8 +71,8 @@ ui <- fluidPage(
                        selectInput(
                          inputId = "season",
                          label = "Season:",
-                         choices = unique(results$season),
-                         selected = as.character(max(results$season))
+                         choices = unique(results$Season),
+                         selected = as.character(max(results$Season))
                        )),
       
       conditionalPanel(condition = "output.showRound == true",
@@ -86,14 +86,14 @@ ui <- fluidPage(
                        selectInput(
                          inputId = "player",
                          label = "Player:",
-                         choices = sort(unique(c(results$player_2, results$player_1)))
+                         choices = sort(unique(c(results$`Player 2`, results$`Player 1`)))
                        )),
       
       conditionalPanel(condition = "output.showRival == true",
                        selectInput(
                          inputId = "rival",
                          label = "Rival:",
-                         choices = sort(unique(c(results$player_2, results$player_1))),
+                         choices = sort(unique(c(results$`Player 2`, results$`Player 1`))),
                        )),
       
     ),
@@ -121,14 +121,14 @@ server <- function(input, output, session) {
   
   observe({
     selected <- input$player
-    choices <- sort(unique(c(results$player_2, results$player_1)))
+    choices <- sort(unique(c(results$`Player 2`, results$`Player 1`)))
     updated_choices <- setdiff(choices, selected)
     updateSelectInput(session, "rival", choices = updated_choices)
   })
   
   observeEvent(input$season, {
     selected_season <- input$season
-    round_choices <- sort(unique(results$round[results$season == selected_season]))
+    round_choices <- sort(unique(results$Round[results$Season == selected_season]))
     max_round <- max(round_choices)
     updateSelectInput(session, "round", choices = round_choices, selected = max_round)
   })
@@ -158,30 +158,114 @@ server <- function(input, output, session) {
   })
   outputOptions(output, "showRival", suspendWhenHidden = FALSE)
   
-  seasonInfoTable <- function() {
-    renderTable({results[1:5, 1:2]}, colnames = FALSE)
-  }
-  
-  roundTable <- function() {
-    renderReactable(reactable(results[1:5, 1:2]))
-  }
-  
-  roundResults <- reactive({
-    results.round = results %>%
-      filter(season == input$season, round == input$round) %>%
-      arrange(phase)
-  })
-  
   output$workInProgress1 <- output$workInProgress2 <- output$workInProgress3 <-
     output$workInProgress4 <- output$workInProgress5 <-
     renderText("<br> Work in progress...<br>")
   
-  output$infoTable <- seasonInfoTable()
+  output$infoTable <- renderTable({
+    results[1:5, 1:2]
+  }, colnames = FALSE)
   
-  output$roundTable <- roundTable()
+  calculateRoundTable <- function() {
+    
+    results.round <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Group phase")
+    
+    # Initialize player statistics
+    players <- unique(c(results.round$`Player 1`, results.round$`Player 2`))
+    results.table <- data.frame(
+      Player = players,
+      Points = rep(0, length(players)),
+      Wins = rep(0, length(players)),
+      Losses = rep(0, length(players)),
+      `Legs Won` = rep(0, length(players)),
+      `Legs Lost` = rep(0, length(players)),
+      `Leg Difference` = rep(0, length(players)),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    # Process each match and update statistics
+    for (i in 1:nrow(results.round)) {
+      player1 <- results.round$`Player 1`[i]
+      player2 <- results.round$`Player 2`[i]
+      result1 <- as.numeric(sub("\\*", "", results.round$`Legs 1`[i]))
+      result2 <- as.numeric(sub("\\*", "", results.round$`Legs 2`[i]))
+
+      # Update legs won and lost
+      results.table[results.table$Player == player1, "Legs Won"] <-
+        results.table[results.table$Player == player1, "Legs Won"] + result1
+      results.table[results.table$Player == player1, "Legs Lost"] <-
+        results.table[results.table$Player == player1, "Legs Lost"] + result2
+      results.table[results.table$Player == player2, "Legs Won"] <-
+        results.table[results.table$Player == player2, "Legs Won"] + result2
+      results.table[results.table$Player == player2, "Legs Lost"] <-
+        results.table[results.table$Player == player2, "Legs Lost"] + result1
+
+      # Update points
+      if (result1 > result2) {
+        results.table[results.table$Player == player1, "Points"] <-
+          results.table[results.table$Player == player1, "Points"] + 1
+        results.table[results.table$Player == player1, "Wins"] <-
+          results.table[results.table$Player == player1, "Wins"] + 1
+        results.table[results.table$Player == player2, "Losses"] <-
+          results.table[results.table$Player == player2, "Losses"] + 1
+      } else {
+        results.table[results.table$Player == player2, "Points"] <-
+          results.table[results.table$Player == player2, "Points"] + 1
+        results.table[results.table$Player == player2, "Wins"] <-
+          results.table[results.table$Player == player2, "Wins"] + 1
+        results.table[results.table$Player == player1, "Losses"] <-
+          results.table[results.table$Player == player1, "Losses"] + 1
+      }
+    }
+
+    # Calculate leg difference
+    results.table <- results.table %>%
+      mutate(`Leg Difference` = `Legs Won` - `Legs Lost`)
+
+    # Sort the table by Points, LegDifference, and LegsWon
+    results.table <- results.table %>%
+      arrange(desc(Points), desc(`Leg Difference`), desc(`Legs Won`))
+    
+    
+    
+    results.table <- results.table %>%
+      mutate("#" = as.character(row_number())) %>%
+      select("#", everything())
+    
+    return(results.table)
+  }
+  
+  output$roundTable <- renderReactable({
+    reactable(
+      calculateRoundTable(),
+      columns = list(
+        "#" = colDef(maxWidth = 50),
+        Player = colDef(minWidth = 275),
+        Points = colDef(maxWidth = 75, align = "center",
+                        style = function(value) {
+                          list(background = "lightgrey")
+                        }
+        ),
+        Wins = colDef(maxWidth = 75, align = "center"),
+        Losses = colDef(maxWidth = 75, align = "center"),
+        `Legs Won` = colDef(minWidth = 100, align = "center"),
+        `Legs Lost` = colDef(minWidth = 100, align = "center"),
+        `Leg Difference` = colDef(minWidth = 125, align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
   
   output$roundMatches <- renderDT({
-    datatable(roundResults(), options = list(pageLength = 10))
+    datatable(
+      results %>%
+        filter(Season == input$season, Round == input$round) %>%
+        arrange(Phase),
+      options = list(pageLength = 10)
+    )
   })
 }
 
