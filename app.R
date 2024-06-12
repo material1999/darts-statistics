@@ -250,7 +250,6 @@ server <- function(input, output, session) {
     
     results.filtered = filter(results, Season == max(results$Season))
     bonus.filtered = filter(bonus, Season == max(bonus$Season))
-    print(bonus.filtered)
     
     info.year = results.filtered$Season[1]
     info.rounds = max(as.numeric(results.filtered$Round))
@@ -260,7 +259,6 @@ server <- function(input, output, session) {
     info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
                                        results.filtered$`Legs 2`)))
     
-    print(max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus))
     info.highestCheckout = max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
     info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
     
