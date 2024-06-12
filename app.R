@@ -122,14 +122,16 @@ ui <- fluidPage(
                                   selectInput(
                                     inputId = "player",
                                     label = "Player:",
-                                    choices = sort(unique(c(results$`Player 2`, results$`Player 1`)))
+                                    choices = sort(unique(c(results$`Player 2`,
+                                                            results$`Player 1`)))
                                   )),
                  
                  conditionalPanel(condition = "output.showRival == true",
                                   selectInput(
                                     inputId = "rival",
                                     label = "Rival:",
-                                    choices = sort(unique(c(results$`Player 2`, results$`Player 1`))),
+                                    choices = sort(unique(c(results$`Player 2`,
+                                                            results$`Player 1`))),
                                   )),
                  
     ),
@@ -138,34 +140,63 @@ ui <- fluidPage(
               
               tabsetPanel(id = "plotTabs",
                           tabPanel("Current season", value = 1,
-                                   div(class = "title-container", p("Work in progress..."))),
+                                   div(class = "title-container",
+                                       p("Work in progress..."))),
                           tabPanel("Past seasons", value = 2,
-                                   div(class = "title-container", p("Work in progress..."))),
+                                   div(class = "title-container",
+                                       p("Work in progress..."))),
                           tabPanel("Round results", value = 3,
-                                   div(class = "title-container", strong("Group phase")),
-                                   div(class = "table-container", reactableOutput("roundTable")),
-                                   div(class = "title-container", strong("Knockout phase")),
+                                   div(class = "title-container",
+                                       strong("Group phase")),
+                                   div(class = "table-container",
+                                       reactableOutput("roundTable")),
+                                   div(class = "title-container",
+                                       strong("Knockout phase")),
                                    fluidRow(
-                                     class = "table-container",
+                                     style = "margin:0px;",
                                      column(6,
                                             class = "subtitle-container",
-                                            style = "background-color:#888888;",
-                                            strong("asd")
+                                            style = "font-size:2em; padding:20px;",
+                                            div("Semi-finals"),
+                                            div("table1")
                                      ),
                                      column(6,
                                             class = "subtitle-container",
-                                            style = "background-color:red;",
-                                            strong("qwe")
+                                            style = "font-size:2em; padding:20px;",
+                                            div("Final"),
+                                            div("table2"),
+                                            div("Bronze match"),
+                                            div("table3")
                                      )
                                    ),
-                                   div(class = "title-container", strong("Match results")),
-                                   div(class = "table-container-2", reactableOutput("roundMatches"))),
+                                   fluidRow(
+                                     style = "margin:0px;",
+                                     column(6,
+                                            class = "subtitle-container",
+                                            style = "font-size:2em; padding:20px;",
+                                            div(strong("Bonus points")),
+                                            div("table4")
+                                     ),
+                                     column(6,
+                                            class = "subtitle-container",
+                                            style = "font-size:2em; padding:20px;",
+                                            div(strong("Standings")),
+                                            div("table5")
+                                     )
+                                   ),
+                                   div(class = "title-container",
+                                       strong("Match results")),
+                                   div(class = "table-container-2",
+                                       reactableOutput("roundMatches"))),
                           tabPanel("All time table", value = 4,
-                                   div(class = "title-container", p("Work in progress..."))),
+                                   div(class = "title-container",
+                                       p("Work in progress..."))),
                           tabPanel("Rivalries", value = 5,
-                                   div(class = "title-container", p("Work in progress..."))),
+                                   div(class = "title-container",
+                                       p("Work in progress..."))),
                           tabPanel("Player bio", value = 6,
-                                   div(class = "title-container", p("Work in progress...")))
+                                   div(class = "title-container",
+                                       p("Work in progress...")))
               )
     )
   )
@@ -218,13 +249,20 @@ server <- function(input, output, session) {
   calculateSeasonInfo <- function() {
     
     results.filtered = filter(results, Season == max(results$Season))
+    bonus.filtered = filter(bonus, Season == max(bonus$Season))
+    print(bonus.filtered)
+    
     info.year = results.filtered$Season[1]
-    info.rounds = max(results.filtered$Round)
+    info.rounds = max(as.numeric(results.filtered$Round))
     info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
                                          results.filtered$`Player 2`)))
     info.matchesPlayed = nrow(results.filtered)
     info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
                                        results.filtered$`Legs 2`)))
+    
+    print(max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus))
+    info.highestCheckout = max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
+    info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
     
     info.table <- data.frame(
       RowHeader = c(
@@ -233,6 +271,7 @@ server <- function(input, output, session) {
         "Unique players",
         "Matches played",
         "Legs played",
+        "Highest checkout",
         "180s"
       ),
       Stats = c(
@@ -241,7 +280,8 @@ server <- function(input, output, session) {
         info.uniquePlayers,
         info.matchesPlayed,
         info.legsPlayed,
-        "TODO"
+        info.highestCheckout,
+        info.180s
       )
     )
     
