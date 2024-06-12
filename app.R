@@ -212,25 +212,27 @@ server <- function(input, output, session) {
     results.filtered = filter(results, Season == max(results$Season))
     info.year = results.filtered$Season[1]
     info.rounds = max(results.filtered$Round)
-    info.matchesPlayed = nrow(results.filtered)
     info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
                                          results.filtered$`Player 2`)))
+    info.matchesPlayed = nrow(results.filtered)
+    info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
+                                       results.filtered$`Legs 2`)))
     
     info.table <- data.frame(
       RowHeader = c(
         "Year",
         "Rounds",
+        "Unique players",
         "Matches played",
         "Legs played",
-        "Unique players",
         "180s"
       ),
       Stats = c(
         info.year,
         info.rounds,
-        info.matchesPlayed,
-        "TODO",
         info.uniquePlayers,
+        info.matchesPlayed,
+        info.legsPlayed,
         "TODO"
       )
     )
