@@ -42,6 +42,14 @@ for (filename in filenames) {
   results <- bind_rows(results, results.current)
 }
 
+filenames <- list.files(path = "./bonus", pattern = "*.xlsx", full.names = TRUE)
+
+bonus <- tibble()
+
+for (filename in filenames) {
+  bonus = read_excel(filename)
+}
+
 rm(filenames)
 rm(filename)
 rm(numbers)
