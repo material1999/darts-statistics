@@ -1,7 +1,8 @@
 # Install and load packages ----------------------------------------------------
 
 # install.packages(c("tidyverse", "ggplot2", "shiny", "gridExtra", "plotly",
-#                    "treemapify", "readxl", "shinydashboard", "DT", "reactable"))
+#                    "treemapify", "readxl", "shinydashboard", "DT", "reactable",
+#                    "bslib"))
 
 library(tidyverse)
 library(ggplot2)
@@ -13,11 +14,13 @@ library(readxl)
 library(shinydashboard)
 library(DT)
 library(reactable)
+library(bslib)
 
 # Load data --------------------------------------------------------------------
 
 setwd("~/Documents/Programming/R/darts-statistics/")
 
+results <- tibble()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
 
 for (filename in filenames) {
@@ -36,7 +39,6 @@ for (filename in filenames) {
   colnames(results.current) <- c("Phase", "Player 1", "Player 2", "Legs 1", "Legs 2",
                                  "Round", "Season", "Month", "Day")
   
-  results <- tibble()
   results <- bind_rows(results, results.current)
 }
 
@@ -53,10 +55,15 @@ ui <- fluidPage(
     .nav {
       margin-bottom: 20px;
     }
-    .text-container {
+    .title-container {
       padding-left: 20px;
       padding-right: 20px;
       font-size: 2em;
+    }
+    .subtitle-container {
+      padding-left: 20px;
+      padding-right: 20px;
+      font-size: 1.5em;
     }
     .table-container {
       padding: 20px;
@@ -66,6 +73,13 @@ ui <- fluidPage(
       padding-right: 20px;
       padding-bottom: 20px;
     }
+    .hide-header {    
+      display: none;
+      visibility: collapse;
+    }
+    .padding-container {
+      padding-bottom: 20px;
+    }
   ")),
   
   titlePanel("Csuka Utca Invitational Masters - Statistics"),
@@ -73,65 +87,78 @@ ui <- fluidPage(
   br(),
   
   sidebarLayout(
-  
+    
     sidebarPanel(width = 3,
-      
-      conditionalPanel(condition = "output.showInfo == true",
-                       helpText("Season info"),
-                       reactableOutput("infoTable")),
-      
-      conditionalPanel(condition = "output.showSeason == true",
-                       selectInput(
-                         inputId = "season",
-                         label = "Season:",
-                         choices = unique(results$Season),
-                         selected = as.character(max(results$Season))
-                       )),
-      
-      conditionalPanel(condition = "output.showRound == true",
-                       selectInput(
-                         inputId = "round",
-                         label = "Round:",
-                         choices = NULL
-                       )),
-      
-      conditionalPanel(condition = "output.showPlayer == true",
-                       selectInput(
-                         inputId = "player",
-                         label = "Player:",
-                         choices = sort(unique(c(results$`Player 2`, results$`Player 1`)))
-                       )),
-      
-      conditionalPanel(condition = "output.showRival == true",
-                       selectInput(
-                         inputId = "rival",
-                         label = "Rival:",
-                         choices = sort(unique(c(results$`Player 2`, results$`Player 1`))),
-                       )),
-      
+                 
+                 conditionalPanel(condition = "output.showInfo == true",
+                                  class = "padding-container",
+                                  helpText("Season info"),
+                                  reactableOutput("infoTable")),
+                 
+                 conditionalPanel(condition = "output.showSeason == true",
+                                  selectInput(
+                                    inputId = "season",
+                                    label = "Season:",
+                                    choices = unique(results$Season),
+                                    selected = as.character(max(results$Season))
+                                  )),
+                 
+                 conditionalPanel(condition = "output.showRound == true",
+                                  selectInput(
+                                    inputId = "round",
+                                    label = "Round:",
+                                    choices = NULL
+                                  )),
+                 
+                 conditionalPanel(condition = "output.showPlayer == true",
+                                  selectInput(
+                                    inputId = "player",
+                                    label = "Player:",
+                                    choices = sort(unique(c(results$`Player 2`, results$`Player 1`)))
+                                  )),
+                 
+                 conditionalPanel(condition = "output.showRival == true",
+                                  selectInput(
+                                    inputId = "rival",
+                                    label = "Rival:",
+                                    choices = sort(unique(c(results$`Player 2`, results$`Player 1`))),
+                                  )),
+                 
     ),
     
     mainPanel(width = 9,
-      
-      tabsetPanel(id = "plotTabs",
-                  tabPanel("Current season", value = 1,
-                           div(class = "text-container", p("Work in progress..."))),
-                  tabPanel("Past seasons", value = 2,
-                           div(class = "text-container", p("Work in progress..."))),
-                  tabPanel("Round results", value = 3,
-                           div(class = "text-container", strong("Group phase")),
-                           div(class = "table-container", reactableOutput("roundTable")),
-                           div(class = "text-container", strong("Knockout phase")),
-                           div(class = "table-container", strong("TODO")),
-                           div(class = "text-container", strong("Match results")),
-                           div(class = "table-container-2", reactableOutput("roundMatches"))),
-                  tabPanel("All time table", value = 4,
-                           div(class = "text-container", p("Work in progress..."))),
-                  tabPanel("Rivalries", value = 5,
-                           div(class = "text-container", p("Work in progress..."))),
-                  tabPanel("Player bio", value = 6,
-                           div(class = "text-container", p("Work in progress...")))
-      )
+              
+              tabsetPanel(id = "plotTabs",
+                          tabPanel("Current season", value = 1,
+                                   div(class = "title-container", p("Work in progress..."))),
+                          tabPanel("Past seasons", value = 2,
+                                   div(class = "title-container", p("Work in progress..."))),
+                          tabPanel("Round results", value = 3,
+                                   div(class = "title-container", strong("Group phase")),
+                                   div(class = "table-container", reactableOutput("roundTable")),
+                                   div(class = "title-container", strong("Knockout phase")),
+                                   fluidRow(
+                                     class = "table-container",
+                                     column(6,
+                                            class = "subtitle-container",
+                                            style = "background-color:#888888;",
+                                            strong("asd")
+                                     ),
+                                     column(6,
+                                            class = "subtitle-container",
+                                            style = "background-color:red;",
+                                            strong("qwe")
+                                     )
+                                   ),
+                                   div(class = "title-container", strong("Match results")),
+                                   div(class = "table-container-2", reactableOutput("roundMatches"))),
+                          tabPanel("All time table", value = 4,
+                                   div(class = "title-container", p("Work in progress..."))),
+                          tabPanel("Rivalries", value = 5,
+                                   div(class = "title-container", p("Work in progress..."))),
+                          tabPanel("Player bio", value = 6,
+                                   div(class = "title-container", p("Work in progress...")))
+              )
     )
   )
 )
@@ -182,18 +209,31 @@ server <- function(input, output, session) {
   
   calculateSeasonInfo <- function() {
     
-    info.table <- data.frame(
-      Year = "asd",
-      Rounds = "asd",
-      `Macthes played` = 0,
-      `Legs played` = 0,
-      `Unique players` = 0,
-      `180s` = 0,
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    )
+    results.filtered = filter(results, Season == max(results$Season))
+    info.year = results.filtered$Season[1]
+    info.rounds = max(results.filtered$Round)
+    info.matchesPlayed = nrow(results.filtered)
+    info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
+                                         results.filtered$`Player 2`)))
     
-    print(info.table)
+    info.table <- data.frame(
+      RowHeader = c(
+        "Year",
+        "Rounds",
+        "Matches played",
+        "Legs played",
+        "Unique players",
+        "180s"
+      ),
+      Stats = c(
+        info.year,
+        info.rounds,
+        info.matchesPlayed,
+        "TODO",
+        info.uniquePlayers,
+        "TODO"
+      )
+    )
     
     return(info.table)
   }
@@ -223,7 +263,7 @@ server <- function(input, output, session) {
       player2 <- results.round$`Player 2`[i]
       result1 <- as.numeric(results.round$`Legs 1`[i])
       result2 <- as.numeric(results.round$`Legs 2`[i])
-
+      
       # Update legs won and lost
       results.table[results.table$Player == player1, "Legs Won"] <-
         results.table[results.table$Player == player1, "Legs Won"] + result1
@@ -233,7 +273,7 @@ server <- function(input, output, session) {
         results.table[results.table$Player == player2, "Legs Won"] + result2
       results.table[results.table$Player == player2, "Legs Lost"] <-
         results.table[results.table$Player == player2, "Legs Lost"] + result1
-
+      
       # Update points
       if (result1 > result2) {
         results.table[results.table$Player == player1, "Points"] <-
@@ -251,11 +291,11 @@ server <- function(input, output, session) {
           results.table[results.table$Player == player1, "Losses"] + 1
       }
     }
-
+    
     # Calculate leg difference
     results.table <- results.table %>%
       mutate(`Leg Difference` = `Legs Won` - `Legs Lost`)
-
+    
     # Sort the table by Points, LegDifference, and LegsWon
     results.table <- results.table %>%
       arrange(desc(Points), desc(`Leg Difference`), desc(`Legs Won`))
@@ -304,22 +344,18 @@ server <- function(input, output, session) {
   }
   
   output$infoTable <- renderReactable({
-    df <- data.frame(
-      RowHeader = c("Header1", "Header2", "Header3"),
-      Column1 = c(1, 2, 3),
-      Column2 = c(4, 5, 6)
-    )
     reactable(
-      df,
+      calculateSeasonInfo(),
       columns = list(
-        RowHeader = colDef(name = " ", width = 150),
-        Column1 = colDef(name = "Column 1"),
-        Column2 = colDef(name = "Column 2")
+        RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
+        Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
       ),
-      rownames = FALSE,
-      highlight = TRUE
+      rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE, outlined = TRUE,
+      theme = reactableTheme(
+        backgroundColor = "#DDDDDD"
+      )
     )
-    # reactable(calculateSeasonInfo())
   })
   
   output$roundTable <- renderReactable({
