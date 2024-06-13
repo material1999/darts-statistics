@@ -20,31 +20,37 @@ library(bslib)
 
 setwd("~/Documents/Programming/R/darts-statistics/")
 
-results <- tibble()
+results <- data.frame()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
 
 for (filename in filenames) {
   
   numbers <- regmatches(filename, gregexpr("[[:digit:]]+", filename))
   
-  results.current = read_excel(filename) %>%
-    select("Phase", "Team 1", "Team 2", "Result team 1", "Result team 2") %>%
+  results.current <- read_excel(filename) %>%
+    select("Phase", "Team 1", "Team 2", "Result team 1", "Result team 2", "Group") %>%
     mutate("Round" = as.character(unlist(numbers))[4]) %>%
     mutate("Season" = as.character(unlist(numbers))[1]) %>%
     mutate("Month" = as.character(unlist(numbers))[2]) %>%
     mutate("Day" = as.character(unlist(numbers))[3]) %>%
     mutate("Result team 1" = sub("\\*", "", `Result team 1`)) %>%
-    mutate("Result team 2" = sub("\\*", "", `Result team 2`))
+    mutate("Result team 2" = sub("\\*", "", `Result team 2`)) %>%
+    mutate(Phase = if_else(Group == "Match B1", "Semi-Final 1", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B2", "Semi-Final 2", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B3", "Final", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B4", "Bronze Match", Phase)) %>%
+    select(-"Group")
   
   colnames(results.current) <- c("Phase", "Player 1", "Player 2", "Legs 1", "Legs 2",
                                  "Round", "Season", "Month", "Day")
   
   results <- bind_rows(results, results.current)
+  
 }
 
-filenames <- list.files(path = "./bonus", pattern = "*.xlsx", full.names = TRUE)
+results <- results[, c(1,2,4,5,3,6,7,8,9)]
 
-bonus <- tibble()
+filenames <- list.files(path = "./bonus", pattern = "*.xlsx", full.names = TRUE)
 
 for (filename in filenames) {
   bonus = read_excel(filename)
@@ -382,7 +388,7 @@ server <- function(input, output, session) {
   calculateRoundMatches <- function() {
     
     results.matches <- results %>%
-      filter(Season == input$season, Round == input$round) %>% arrange(Phase)
+      filter(Season == input$season, Round == input$round)
     
     results.matches <- results.matches %>%
       mutate("#" = as.character(row_number())) %>%
@@ -434,10 +440,10 @@ server <- function(input, output, session) {
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Phase = colDef(minWidth = 100),
-        `Player 1` = colDef(minWidth = 100),
-        `Player 2` = colDef(minWidth = 100),
+        `Player 1` = colDef(minWidth = 100, align = "center"),
         `Legs 1` = colDef(minWidth = 75, align = "center"),
         `Legs 2` = colDef(minWidth = 75, align = "center"),
+        `Player 2` = colDef(minWidth = 100, align = "center"),
         Round = colDef(maxWidth = 75, align = "center"),
         Season = colDef(maxWidth = 75, align = "center"),
         Month = colDef(maxWidth = 75, align = "center"),
