@@ -441,8 +441,14 @@ server <- function(input, output, session) {
         "#" = colDef(maxWidth = 50, align = "center"),
         Phase = colDef(minWidth = 100),
         `Player 1` = colDef(minWidth = 100, align = "center"),
-        `Legs 1` = colDef(minWidth = 75, align = "center"),
-        `Legs 2` = colDef(minWidth = 75, align = "center"),
+        `Legs 1` = colDef(minWidth = 75, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Legs 2` = colDef(minWidth = 75, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
         `Player 2` = colDef(minWidth = 100, align = "center"),
         Round = colDef(maxWidth = 75, align = "center"),
         Season = colDef(maxWidth = 75, align = "center"),
