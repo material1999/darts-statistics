@@ -169,16 +169,14 @@ ui <- fluidPage(
                                    fluidRow(
                                      style = "margin:0px;",
                                      column(6,
-                                            style = "",
                                             div(class = "subtitle-container", "Semi-Finals"),
                                             div(class = "subtable-container",
                                                 reactableOutput("semiFinalTable"))
                                      ),
                                      column(6,
-                                            class = "subtitle-container",
-                                            style = "font-size:2em; padding:20px;",
-                                            div("Final"),
-                                            div("table2"),
+                                            div(class = "subtitle-container", "Final"),
+                                            div(class = "subtable-container",
+                                                reactableOutput("finalTable")),
                                             div("Bronze match"),
                                             div("table3")
                                      )
@@ -396,13 +394,19 @@ server <- function(input, output, session) {
   calculateSemiFinalTable <- function() {
     
     results.semiFinals <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Semi-Final")
-    
-    results.semiFinals <- results.semiFinals %>%
-      mutate("#" = as.character(row_number())) %>%
-      select("#", "Player 1", "Legs 1", "Legs 2", "Player 2")
+      filter(Season == input$season, Round == input$round, Phase == "Semi-Final") %>%
+      select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
     return(results.semiFinals)
+  }
+  
+  calculateFinalTable <- function() {
+    
+    results.finals <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Final") %>%
+      select("Player 1", "Legs 1", "Legs 2", "Player 2")
+    
+    return(results.finals)
   }
   
   calculateRoundMatches <- function() {
@@ -458,7 +462,26 @@ server <- function(input, output, session) {
     reactable(
       calculateSemiFinalTable(),
       columns = list(
-        "#" = colDef(maxWidth = 25, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Legs 1` = colDef(minWidth = 50, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Legs 2` = colDef(minWidth = 50, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Player 2` = colDef(minWidth = 100, align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$finalTable  <- renderReactable({
+    reactable(
+      calculateFinalTable(),
+      columns = list(
         `Player 1` = colDef(minWidth = 100, align = "center"),
         `Legs 1` = colDef(minWidth = 50, align = "center",
                           style = function(value) {
