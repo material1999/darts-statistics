@@ -523,7 +523,7 @@ server <- function(input, output, session) {
       rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
       borderless = TRUE, outlined = TRUE,
       theme = reactableTheme(
-        backgroundColor = "#DDDDDD"
+        backgroundColor = "#F7F7F7"
       )
     )
   })
@@ -620,7 +620,7 @@ server <- function(input, output, session) {
       rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
       borderless = TRUE, outlined = TRUE,
       theme = reactableTheme(
-        backgroundColor = "#DDDDDD"
+        backgroundColor = "#F7F7F7"
       )
     )
   })
