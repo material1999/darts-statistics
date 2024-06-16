@@ -35,8 +35,8 @@ for (filename in filenames) {
     mutate("Day" = as.character(unlist(numbers))[3]) %>%
     mutate("Result team 1" = sub("\\*", "", `Result team 1`)) %>%
     mutate("Result team 2" = sub("\\*", "", `Result team 2`)) %>%
-    mutate(Phase = if_else(Group == "Match B1", "Semi-Final 1", Phase)) %>%
-    mutate(Phase = if_else(Group == "Match B2", "Semi-Final 2", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B1", "Semi-Final", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B2", "Semi-Final", Phase)) %>%
     mutate(Phase = if_else(Group == "Match B3", "Final", Phase)) %>%
     mutate(Phase = if_else(Group == "Match B4", "Bronze Match", Phase)) %>%
     select(-"Group")
@@ -75,9 +75,10 @@ ui <- fluidPage(
       font-size: 2em;
     }
     .subtitle-container {
-      padding-left: 20px;
-      padding-right: 20px;
-      font-size: 1.5em;
+      padding-left: 5px;
+      padding-right: 5px;
+      padding-top: 20px;
+      font-size: 2em;
     }
     .table-container {
       padding: 20px;
@@ -85,6 +86,12 @@ ui <- fluidPage(
     .table-container-2 {
       padding-left: 20px;
       padding-right: 20px;
+      padding-bottom: 20px;
+    }
+    .subtable-container {
+      padding-left: 0px;
+      padding-right: 0px;
+      padding-top: 20px;
       padding-bottom: 20px;
     }
     .hide-header {    
@@ -107,7 +114,8 @@ ui <- fluidPage(
                  conditionalPanel(condition = "output.showInfo == true",
                                   class = "padding-container",
                                   helpText("Season info"),
-                                  reactableOutput("infoTable")),
+                                  reactableOutput("infoTable")
+                                  ),
                  
                  conditionalPanel(condition = "output.showSeason == true",
                                   selectInput(
@@ -161,10 +169,10 @@ ui <- fluidPage(
                                    fluidRow(
                                      style = "margin:0px;",
                                      column(6,
-                                            class = "subtitle-container",
-                                            style = "font-size:2em; padding:20px;",
-                                            div("Semi-finals"),
-                                            div("table1")
+                                            style = "",
+                                            div(class = "subtitle-container", "Semi-Finals"),
+                                            div(class = "subtable-container",
+                                                reactableOutput("semiFinalTable"))
                                      ),
                                      column(6,
                                             class = "subtitle-container",
@@ -385,6 +393,18 @@ server <- function(input, output, session) {
     return(results.table)
   }
   
+  calculateSemiFinalTable <- function() {
+    
+    results.semiFinals <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Semi-Final")
+    
+    results.semiFinals <- results.semiFinals %>%
+      mutate("#" = as.character(row_number())) %>%
+      select("#", "Player 1", "Legs 1", "Legs 2", "Player 2")
+    
+    return(results.semiFinals)
+  }
+  
   calculateRoundMatches <- function() {
     
     results.matches <- results %>%
@@ -428,6 +448,27 @@ server <- function(input, output, session) {
         `Legs Won` = colDef(minWidth = 100, align = "center"),
         `Legs Lost` = colDef(minWidth = 100, align = "center"),
         `Leg Difference` = colDef(minWidth = 125, align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$semiFinalTable  <- renderReactable({
+    reactable(
+      calculateSemiFinalTable(),
+      columns = list(
+        "#" = colDef(maxWidth = 25, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Legs 1` = colDef(minWidth = 50, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Legs 2` = colDef(minWidth = 50, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Player 2` = colDef(minWidth = 100, align = "center")
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
