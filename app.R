@@ -177,8 +177,9 @@ ui <- fluidPage(
                                             div(class = "subtitle-container", "Final"),
                                             div(class = "subtable-container",
                                                 reactableOutput("finalTable")),
-                                            div("Bronze match"),
-                                            div("table3")
+                                            div(class = "subtitle-container", "Bronze Match"),
+                                            div(class = "subtable-container",
+                                                reactableOutput("bronzeTable")),
                                      )
                                    ),
                                    fluidRow(
@@ -402,11 +403,20 @@ server <- function(input, output, session) {
   
   calculateFinalTable <- function() {
     
-    results.finals <- results %>%
+    results.final <- results %>%
       filter(Season == input$season, Round == input$round, Phase == "Final") %>%
       select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
-    return(results.finals)
+    return(results.final)
+  }
+  
+  calculateBronzeTable <- function() {
+    
+    results.bronze <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Bronze Match") %>%
+      select("Player 1", "Legs 1", "Legs 2", "Player 2")
+    
+    return(results.bronze)
   }
   
   calculateRoundMatches <- function() {
@@ -481,6 +491,26 @@ server <- function(input, output, session) {
   output$finalTable  <- renderReactable({
     reactable(
       calculateFinalTable(),
+      columns = list(
+        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Legs 1` = colDef(minWidth = 50, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Legs 2` = colDef(minWidth = 50, align = "center",
+                          style = function(value) {
+                            list(background = "lightgrey")
+                          }),
+        `Player 2` = colDef(minWidth = 100, align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$bronzeTable  <- renderReactable({
+    reactable(
+      calculateBronzeTable(),
       columns = list(
         `Player 1` = colDef(minWidth = 100, align = "center"),
         `Legs 1` = colDef(minWidth = 50, align = "center",
