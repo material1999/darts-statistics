@@ -35,10 +35,10 @@ for (filename in filenames) {
     mutate("Day" = as.character(unlist(numbers))[3]) %>%
     mutate("Result team 1" = sub("\\*", "", `Result team 1`)) %>%
     mutate("Result team 2" = sub("\\*", "", `Result team 2`)) %>%
-    mutate(Phase = if_else(Group == "Match B1", "Semi-Final", Phase)) %>%
-    mutate(Phase = if_else(Group == "Match B2", "Semi-Final", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B1", "Semi-final", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B2", "Semi-final", Phase)) %>%
     mutate(Phase = if_else(Group == "Match B3", "Final", Phase)) %>%
-    mutate(Phase = if_else(Group == "Match B4", "Bronze Match", Phase)) %>%
+    mutate(Phase = if_else(Group == "Match B4", "Bronze match", Phase)) %>%
     select(-"Group")
   
   colnames(results.current) <- c("Phase", "Player 1", "Player 2", "Legs 1", "Legs 2",
@@ -69,14 +69,21 @@ ui <- fluidPage(
     .nav {
       margin-bottom: 20px;
     }
+    .title-container-top {
+      padding-left: 20px;
+      padding-right: 20px;
+      font-size: 2em;
+    }
     .title-container {
       padding-left: 20px;
       padding-right: 20px;
+      padding-top: 20px;
       font-size: 2em;
     }
     .title-container-2 {
       padding-left: 5px;
       padding-right: 5px;
+      padding-top: 20px;
       font-size: 2em;
     }
     .subtitle-container {
@@ -165,7 +172,7 @@ ui <- fluidPage(
                                    div(class = "title-container",
                                        p("Work in progress..."))),
                           tabPanel("Round results", value = 3,
-                                   div(class = "title-container",
+                                   div(class = "title-container-top",
                                        strong("Group phase")),
                                    div(class = "table-container",
                                        reactableOutput("roundTable")),
@@ -174,7 +181,7 @@ ui <- fluidPage(
                                      column(6,
                                             div(class = "title-container-2",
                                                 strong("Knockout phase")),
-                                            div(class = "subtitle-container", "Semi-Finals"),
+                                            div(class = "subtitle-container", "Semi-finals"),
                                             div(class = "subtable-container",
                                                 reactableOutput("semiFinalTable")),
                                             div(class = "subtitle-container", "Final"),
@@ -187,8 +194,12 @@ ui <- fluidPage(
                                      column(6,
                                             div(class = "title-container-2",
                                                 strong("Bonus points")),
+                                            div(class = "subtable-container",
+                                                reactableOutput("bonusPointsTable")),
                                             div(class = "title-container-2",
-                                                strong("Final standings")),
+                                                strong("Round standings")),
+                                            div(class = "subtable-container",
+                                                reactableOutput("roundStandingsTable"))
                                      )
                                    ),
                                    div(class = "title-container",
@@ -305,9 +316,9 @@ server <- function(input, output, session) {
       Points = rep(0, length(players)),
       Wins = rep(0, length(players)),
       Losses = rep(0, length(players)),
-      `Legs Won` = rep(0, length(players)),
-      `Legs Lost` = rep(0, length(players)),
-      `Leg Difference` = rep(0, length(players)),
+      `Legs won` = rep(0, length(players)),
+      `Legs lost` = rep(0, length(players)),
+      `Leg difference` = rep(0, length(players)),
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
@@ -320,14 +331,14 @@ server <- function(input, output, session) {
       result2 <- as.numeric(results.round$`Legs 2`[i])
       
       # Update legs won and lost
-      results.table[results.table$Player == player1, "Legs Won"] <-
-        results.table[results.table$Player == player1, "Legs Won"] + result1
-      results.table[results.table$Player == player1, "Legs Lost"] <-
-        results.table[results.table$Player == player1, "Legs Lost"] + result2
-      results.table[results.table$Player == player2, "Legs Won"] <-
-        results.table[results.table$Player == player2, "Legs Won"] + result2
-      results.table[results.table$Player == player2, "Legs Lost"] <-
-        results.table[results.table$Player == player2, "Legs Lost"] + result1
+      results.table[results.table$Player == player1, "Legs won"] <-
+        results.table[results.table$Player == player1, "Legs won"] + result1
+      results.table[results.table$Player == player1, "Legs lost"] <-
+        results.table[results.table$Player == player1, "Legs lost"] + result2
+      results.table[results.table$Player == player2, "Legs won"] <-
+        results.table[results.table$Player == player2, "Legs won"] + result2
+      results.table[results.table$Player == player2, "Legs lost"] <-
+        results.table[results.table$Player == player2, "Legs lost"] + result1
       
       # Update points
       if (result1 > result2) {
@@ -349,17 +360,17 @@ server <- function(input, output, session) {
     
     # Calculate leg difference
     results.table <- results.table %>%
-      mutate(`Leg Difference` = `Legs Won` - `Legs Lost`)
+      mutate(`Leg difference` = `Legs won` - `Legs lost`)
     
     # Sort the table by Points, LegDifference, and LegsWon
     results.table <- results.table %>%
-      arrange(desc(Points), desc(`Leg Difference`), desc(`Legs Won`))
+      arrange(desc(Points), desc(`Leg difference`), desc(`Legs won`))
     
     # Sort the table based on score against each other if needed
     for (i in 2:nrow(results.table)) {
       if (results.table$Points[i-1] == results.table$Points[i] &
-          results.table$`Leg Difference`[i-1] == results.table$`Leg Difference`[i] &
-          results.table$`Legs Won`[i-1] == results.table$`Legs Won`[i]) {
+          results.table$`Leg difference`[i-1] == results.table$`Leg difference`[i] &
+          results.table$`Legs won`[i-1] == results.table$`Legs won`[i]) {
         change1 = results.table$Player[i-1]
         change2 = results.table$Player[i]
         for (j in 1:nrow(results.round)) {
@@ -389,7 +400,7 @@ server <- function(input, output, session) {
   calculateSemiFinalTable <- function() {
     
     results.semiFinals <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Semi-Final") %>%
+      filter(Season == input$season, Round == input$round, Phase == "Semi-final") %>%
       select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
     return(results.semiFinals)
@@ -407,10 +418,24 @@ server <- function(input, output, session) {
   calculateBronzeTable <- function() {
     
     results.bronze <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Bronze Match") %>%
+      filter(Season == input$season, Round == input$round, Phase == "Bronze match") %>%
       select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
     return(results.bronze)
+  }
+  
+  calculateBonusPointsTable <- function() {
+    
+    bonus.round <- bonus %>%
+      filter(Season == input$season, Round == input$round) %>%
+      select("Player", "Bonus")
+    
+    return(bonus.round)
+  }
+  
+  calculateRoundStandingsTable <- function() {
+    
+    
   }
   
   calculateRoundMatches <- function() {
@@ -453,9 +478,9 @@ server <- function(input, output, session) {
         ),
         Wins = colDef(maxWidth = 75, align = "center"),
         Losses = colDef(maxWidth = 75, align = "center"),
-        `Legs Won` = colDef(minWidth = 100, align = "center"),
-        `Legs Lost` = colDef(minWidth = 100, align = "center"),
-        `Leg Difference` = colDef(minWidth = 125, align = "center")
+        `Legs won` = colDef(minWidth = 100, align = "center"),
+        `Legs lost` = colDef(minWidth = 100, align = "center"),
+        `Leg difference` = colDef(minWidth = 125, align = "center")
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
@@ -516,6 +541,18 @@ server <- function(input, output, session) {
                             list(background = "lightgrey")
                           }),
         `Player 2` = colDef(minWidth = 100, align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$bonusPointsTable  <- renderReactable({
+    reactable(
+      calculateBonusPointsTable(),
+      columns = list(
+        `Player` = colDef(minWidth = 100, align = "center"),
+        `Bonus` = colDef(minWidth = 50, align = "center")
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
