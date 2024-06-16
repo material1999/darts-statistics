@@ -167,11 +167,17 @@ ui <- fluidPage(
               tabsetPanel(id = "plotTabs",
                           tabPanel("Current season", value = 1,
                                    div(class = "title-container",
-                                       p("Work in progress..."))),
+                                       strong("Season standings")),
+                                   div(class = "table-container",
+                                       reactableOutput("standingsTable"))),
                           tabPanel("Past seasons", value = 2,
                                    div(class = "title-container",
                                        p("Work in progress..."))),
                           tabPanel("Round results", value = 3,
+                                   div(class = "title-container",
+                                       strong("Final standings")),
+                                   div(class = "table-container",
+                                       reactableOutput("roundStandingsTable")),
                                    div(class = "title-container-top",
                                        strong("Group phase")),
                                    div(class = "table-container",
@@ -206,10 +212,6 @@ ui <- fluidPage(
                                                 reactableOutput("oneEightyTable"))
                                      )
                                    ),
-                                   div(class = "title-container",
-                                       strong("Round standings")),
-                                   div(class = "table-container",
-                                       reactableOutput("roundStandingsTable")),
                                    div(class = "title-container",
                                        strong("Match results")),
                                    div(class = "table-container-2",
@@ -499,6 +501,82 @@ server <- function(input, output, session) {
   
   calculateRoundStandingsTable <- function() {
     
+    results.group <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Group phase")
+    results.bronze <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Bronze match")
+    results.final <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Final")
+    
+    players <- unique(c(results.group$`Player 1`, results.group$`Player 2`))
+    results.table <- data.frame(
+      Player = players,
+      `Matches won` = rep(0, length(players)),
+      `Leg difference` = rep(0, length(players)),
+      `Legs won` = rep(0, length(players)),
+      Points = rep(0, length(players)),
+      `Bonus points` = rep(0, length(players)),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    if (results.final$`Legs 1` > results.final$`Legs 2`) {
+      results.table[results.table$Player == results.final$`Player 1`, "Points"] <-
+        results.table[results.table$Player == results.final$`Player 1`, "Points"] + 8
+      results.table[results.table$Player == results.final$`Player 2`, "Points"] <-
+        results.table[results.table$Player == results.final$`Player 2`, "Points"] + 6
+    } else {
+      results.table[results.table$Player == results.final$`Player 2`, "Points"] <-
+        results.table[results.table$Player == results.final$`Player 2`, "Points"] + 8
+      results.table[results.table$Player == results.final$`Player 1`, "Points"] <-
+        results.table[results.table$Player == results.final$`Player 1`, "Points"] + 6
+    }
+    
+    results.table <- results.table %>%
+      arrange(desc(Points),
+              desc(`Matches won`),
+              desc(`Leg difference`),
+              desc(`Legs won`),
+              desc(`Bonus points`))
+    
+    results.table <- results.table %>%
+      mutate("#" = as.character(row_number())) %>%
+      select("#", everything())
+    
+    return(results.table)
+  }
+  
+  calculateStandingsTable <- function() {
+    
+    results.season <- results %>%
+      filter(Season == max(results$Season))
+    
+    players <- unique(c(results.season$`Player 1`, results.season$`Player 2`))
+    results.table <- data.frame(
+      Player = players,
+      `Nights won` = rep(0, length(players)),
+      `Top-4 finishes` = rep(0, length(players)),
+      `Matches won` = rep(0, length(players)),
+      `Leg difference` = rep(0, length(players)),
+      `Legs won` = rep(0, length(players)),
+      Points = rep(0, length(players)),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    results.table <- results.table %>%
+      arrange(desc(Points),
+              desc(`Nights won`),
+              desc(`Top-4 finishes`),
+              desc(`Matches won`),
+              desc(`Leg difference`),
+              desc(`Legs won`))
+    
+    results.table <- results.table %>%
+      mutate("#" = as.character(row_number())) %>%
+      select("#", everything())
+    
+    return(results.table)
   }
   
   calculateRoundMatches <- function() {
@@ -649,6 +727,53 @@ server <- function(input, output, session) {
                         style = function(value) {
                           list(background = "lightgrey")
                         })
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$roundStandingsTable <- renderReactable({
+    reactable(
+      calculateRoundStandingsTable(),
+      columns = list(
+        "#" = colDef(maxWidth = 50, align = "center"),
+        Player = colDef(minWidth = 275),
+        `Matches won` = colDef(maxWidth = 125, align = "center"),
+        `Leg difference` = colDef(maxWidth = 125, align = "center"),
+        `Legs won` = colDef(maxWidth = 100, align = "center"),
+        Points = colDef(maxWidth = 75, align = "center",
+                        style = function(value) {
+                          list(background = "lightgrey")
+                        }
+        ),
+        `Bonus points` = colDef(maxWidth = 125, align = "center",
+                        style = function(value) {
+                          list(background = "#b8c8d2")
+                        }
+        )
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$standingsTable <- renderReactable({
+    reactable(
+      calculateStandingsTable(),
+      columns = list(
+        "#" = colDef(maxWidth = 50, align = "center"),
+        Player = colDef(minWidth = 275),
+        `Nights won` = colDef(minWidth = 100, align = "center"),
+        `Top-4 finishes` = colDef(minWidth = 125, align = "center"),
+        `Matches won` = colDef(minWidth = 125, align = "center"),
+        `Leg difference` = colDef(minWidth = 125, align = "center"),
+        `Legs won` = colDef(minWidth = 100, align = "center"),
+        Points = colDef(maxWidth = 75, align = "center",
+                        style = function(value) {
+                          list(background = "lightgrey")
+                        }
+        )
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
