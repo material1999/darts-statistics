@@ -74,6 +74,11 @@ ui <- fluidPage(
       padding-right: 20px;
       font-size: 2em;
     }
+    .title-container-2 {
+      padding-left: 5px;
+      padding-right: 5px;
+      font-size: 2em;
+    }
     .subtitle-container {
       padding-left: 5px;
       padding-right: 5px;
@@ -164,37 +169,26 @@ ui <- fluidPage(
                                        strong("Group phase")),
                                    div(class = "table-container",
                                        reactableOutput("roundTable")),
-                                   div(class = "title-container",
-                                       strong("Knockout phase")),
                                    fluidRow(
                                      style = "margin:0px;",
                                      column(6,
+                                            div(class = "title-container-2",
+                                                strong("Knockout phase")),
                                             div(class = "subtitle-container", "Semi-Finals"),
                                             div(class = "subtable-container",
-                                                reactableOutput("semiFinalTable"))
-                                     ),
-                                     column(6,
+                                                reactableOutput("semiFinalTable")),
                                             div(class = "subtitle-container", "Final"),
                                             div(class = "subtable-container",
                                                 reactableOutput("finalTable")),
-                                            div(class = "subtitle-container", "Bronze Match"),
+                                            div(class = "subtitle-container", "Bronze match"),
                                             div(class = "subtable-container",
-                                                reactableOutput("bronzeTable")),
-                                     )
-                                   ),
-                                   fluidRow(
-                                     style = "margin:0px;",
-                                     column(6,
-                                            class = "subtitle-container",
-                                            style = "font-size:2em; padding:20px;",
-                                            div(strong("Bonus points")),
-                                            div("table4")
+                                                reactableOutput("bronzeTable"))
                                      ),
                                      column(6,
-                                            class = "subtitle-container",
-                                            style = "font-size:2em; padding:20px;",
-                                            div(strong("Standings")),
-                                            div("table5")
+                                            div(class = "title-container-2",
+                                                strong("Bonus points")),
+                                            div(class = "title-container-2",
+                                                strong("Final standings")),
                                      )
                                    ),
                                    div(class = "title-container",
