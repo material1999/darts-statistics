@@ -184,18 +184,22 @@ ui <- fluidPage(
                                             div(class = "subtitle-container", "Semi-finals"),
                                             div(class = "subtable-container",
                                                 reactableOutput("semiFinalTable")),
-                                            div(class = "subtitle-container", "Final"),
-                                            div(class = "subtable-container",
-                                                reactableOutput("finalTable")),
                                             div(class = "subtitle-container", "Bronze match"),
                                             div(class = "subtable-container",
-                                                reactableOutput("bronzeTable"))
+                                                reactableOutput("bronzeTable")),
+                                            div(class = "subtitle-container", "Final"),
+                                            div(class = "subtable-container",
+                                                reactableOutput("finalTable"))
                                      ),
                                      column(6,
                                             div(class = "title-container-2",
                                                 strong("Bonus points")),
+                                            div(class = "subtitle-container", "Highest checkout"),
                                             div(class = "subtable-container",
-                                                reactableOutput("bonusPointsTable")),
+                                                reactableOutput("highestCheckoutTable")),
+                                            div(class = "subtitle-container", "180s"),
+                                            div(class = "subtable-container",
+                                                reactableOutput("oneEightyTable")),
                                             div(class = "title-container-2",
                                                 strong("Round standings")),
                                             div(class = "subtable-container",
@@ -424,13 +428,29 @@ server <- function(input, output, session) {
     return(results.bronze)
   }
   
-  calculateBonusPointsTable <- function() {
+  calculateHighestCheckoutTable <- function() {
     
-    bonus.round <- bonus %>%
-      filter(Season == input$season, Round == input$round) %>%
+    bonus.round.checkout <- bonus %>%
+      filter(Season == input$season, Round == input$round, as.numeric(Bonus) < 180) %>%
       select("Player", "Bonus")
     
-    return(bonus.round)
+    colnames(bonus.round.checkout) <- c("Player", "Checkout")
+    
+    return(bonus.round.checkout)
+  }
+  
+  calculateOneEightyTable <- function() {
+    
+    bonus.round.oneEighty <- bonus %>%
+      filter(Season == input$season, Round == input$round, as.numeric(Bonus) == 180) %>%
+      select("Player", "Bonus") %>%
+      group_by(Player) %>%
+      summarise("180s" = n()) %>%
+      arrange(desc(`180s`))
+    
+    print(bonus.round.oneEighty)
+    
+    return(bonus.round.oneEighty)
   }
   
   calculateRoundStandingsTable <- function() {
@@ -547,12 +567,30 @@ server <- function(input, output, session) {
     )
   })
   
-  output$bonusPointsTable  <- renderReactable({
+  output$highestCheckoutTable  <- renderReactable({
     reactable(
-      calculateBonusPointsTable(),
+      calculateHighestCheckoutTable(),
       columns = list(
         `Player` = colDef(minWidth = 100, align = "center"),
-        `Bonus` = colDef(minWidth = 50, align = "center")
+        `Checkout` = colDef(minWidth = 50, align = "center",
+                            style = function(value) {
+                              list(background = "lightgrey")
+                            })
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$oneEightyTable  <- renderReactable({
+    reactable(
+      calculateOneEightyTable(),
+      columns = list(
+        `Player` = colDef(minWidth = 100, align = "center"),
+        `180s` = colDef(minWidth = 50, align = "center",
+                        style = function(value) {
+                          list(background = "lightgrey")
+                        })
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
