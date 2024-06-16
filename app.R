@@ -193,19 +193,23 @@ ui <- fluidPage(
                                      ),
                                      column(6,
                                             div(class = "title-container-2",
+                                                strong("Round info")),
+                                            div(class = "subtable-container",
+                                                reactableOutput("roundInfoTable")),
+                                            div(class = "title-container-2",
                                                 strong("Bonus points")),
                                             div(class = "subtitle-container", "Highest checkout"),
                                             div(class = "subtable-container",
                                                 reactableOutput("highestCheckoutTable")),
                                             div(class = "subtitle-container", "180s"),
                                             div(class = "subtable-container",
-                                                reactableOutput("oneEightyTable")),
-                                            div(class = "title-container-2",
-                                                strong("Round standings")),
-                                            div(class = "subtable-container",
-                                                reactableOutput("roundStandingsTable"))
+                                                reactableOutput("oneEightyTable"))
                                      )
                                    ),
+                                   div(class = "title-container",
+                                       strong("Round standings")),
+                                   div(class = "table-container",
+                                       reactableOutput("roundStandingsTable")),
                                    div(class = "title-container",
                                        strong("Match results")),
                                    div(class = "table-container-2",
@@ -297,6 +301,49 @@ server <- function(input, output, session) {
       Stats = c(
         info.year,
         info.rounds,
+        info.uniquePlayers,
+        info.matchesPlayed,
+        info.legsPlayed,
+        info.highestCheckout,
+        info.180s
+      )
+    )
+    
+    return(info.table)
+  }
+  
+  calculateRoundInfo <- function() {
+    
+    results.filtered = filter(results, Season == input$season, Round == input$round)
+    bonus.filtered = filter(bonus, Season == input$season, Round == input$round)
+    
+    info.date = as.character(
+      paste(
+        sep = "-",
+        results.filtered$Season[1],
+        results.filtered$Month[1],
+        results.filtered$Day[1])
+      )
+    info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
+                                         results.filtered$`Player 2`)))
+    info.matchesPlayed = nrow(results.filtered)
+    info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
+                                       results.filtered$`Legs 2`)))
+    
+    info.highestCheckout = max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
+    info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
+    
+    info.table <- data.frame(
+      RowHeader = c(
+        "Date",
+        "Players",
+        "Matches played",
+        "Legs played",
+        "Highest checkout",
+        "180s"
+      ),
+      Stats = c(
+        info.date,
         info.uniquePlayers,
         info.matchesPlayed,
         info.legsPlayed,
@@ -452,7 +499,6 @@ server <- function(input, output, session) {
   
   calculateRoundStandingsTable <- function() {
     
-    
   }
   
   calculateRoundMatches <- function() {
@@ -561,6 +607,21 @@ server <- function(input, output, session) {
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
+    )
+  })
+  
+  output$roundInfoTable <- renderReactable({
+    reactable(
+      calculateRoundInfo(),
+      columns = list(
+        RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
+        Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
+      ),
+      rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE, outlined = TRUE,
+      theme = reactableTheme(
+        backgroundColor = "#DDDDDD"
+      )
     )
   })
   
