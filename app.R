@@ -384,7 +384,6 @@ server <- function(input, output, session) {
           result2 <- as.numeric(sub("\\*", "", results.round$`Legs 2`[j]))
           if ((player1 == change1 & player2 == change2 & result2 > result1) |
               player1 == change2 & player2 == change1 & result1 > result2) {
-            # print(paste(change1, "*change*", change2))
             tmp_row <- results.table[i-1,]
             results.table[i-1,] <- results.table[i,]
             results.table[i,] <- tmp_row
@@ -447,8 +446,6 @@ server <- function(input, output, session) {
       group_by(Player) %>%
       summarise("180s" = n()) %>%
       arrange(desc(`180s`))
-    
-    print(bonus.round.oneEighty)
     
     return(bonus.round.oneEighty)
   }
