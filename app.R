@@ -507,6 +507,8 @@ server <- function(input, output, session) {
       filter(Season == input$season, Round == input$round, Phase == "Bronze match")
     results.final <- results %>%
       filter(Season == input$season, Round == input$round, Phase == "Final")
+    results.checkout <- calculateHighestCheckoutTable()
+    results.oneEighty <- calculateOneEightyTable()
     
     players <- results.group$Player
     results.table <- data.frame(
@@ -539,6 +541,95 @@ server <- function(input, output, session) {
     results.table[results.table$Player == results.group$`Player`[5], "Points"] <- 2
     results.table[results.table$Player == results.group$`Player`[6], "Points"] <- 1
     
+    for (i in 1:nrow(results.table)) {
+      results.table[results.table$Player == results.group$`Player`[i], "Matches won"] <-
+        results.group[results.table$Player == results.group$`Player`[i], "Wins"]
+      results.table[results.table$Player == results.group$`Player`[i], "Leg difference"] <-
+        results.group[results.table$Player == results.group$`Player`[i], "Leg difference"]
+      results.table[results.table$Player == results.group$`Player`[i], "Legs won"] <-
+        results.group[results.table$Player == results.group$`Player`[i], "Legs won"]
+    }
+    
+    for (i in 1:nrow(results.semi)) {
+      results.table[results.table$Player == results.semi$`Player 1`[i], "Legs won"] <-
+        results.table[results.table$Player == results.semi$`Player 1`[i], "Legs won"] +
+        as.numeric(results.semi$`Legs 1`[i])
+      results.table[results.table$Player == results.semi$`Player 2`[i], "Legs won"] <-
+        results.table[results.table$Player == results.semi$`Player 2`[i], "Legs won"] +
+        as.numeric(results.semi$`Legs 2`[i])
+      results.table[results.table$Player == results.semi$`Player 1`[i], "Leg difference"] <-
+        results.table[results.table$Player == results.semi$`Player 1`[i], "Leg difference"] +
+        as.numeric(results.semi$`Legs 1`[i]) -
+        as.numeric(results.semi$`Legs 2`[i])
+      results.table[results.table$Player == results.semi$`Player 2`[i], "Leg difference"] <-
+        results.table[results.table$Player == results.semi$`Player 2`[i], "Leg difference"] +
+        as.numeric(results.semi$`Legs 2`[i]) -
+        as.numeric(results.semi$`Legs 1`[i])
+      if (results.semi$`Legs 1`[i] > results.semi$`Legs 2`[i]) {
+        results.table[results.table$Player == results.semi$`Player 1`[i], "Matches won"] <-
+          results.table[results.table$Player == results.semi$`Player 1`[i], "Matches won"] + 1
+      } else {
+        results.table[results.table$Player == results.semi$`Player 2`[i], "Matches won"] <-
+          results.table[results.table$Player == results.semi$`Player 2`[i], "Matches won"] + 1
+      }
+    }
+    
+    if (nrow(results.bronze) == 1) {
+      results.table[results.table$Player == results.bronze$`Player 1`, "Legs won"] <-
+        results.table[results.table$Player == results.bronze$`Player 1`, "Legs won"] +
+        as.numeric(results.bronze$`Legs 1`)
+      results.table[results.table$Player == results.bronze$`Player 2`, "Legs won"] <-
+        results.table[results.table$Player == results.bronze$`Player 2`, "Legs won"] +
+        as.numeric(results.bronze$`Legs 2`)
+      results.table[results.table$Player == results.bronze$`Player 1`, "Leg difference"] <-
+        results.table[results.table$Player == results.bronze$`Player 1`, "Leg difference"] +
+        as.numeric(results.bronze$`Legs 1`) -
+        as.numeric(results.bronze$`Legs 2`)
+      results.table[results.table$Player == results.bronze$`Player 2`, "Leg difference"] <-
+        results.table[results.table$Player == results.bronze$`Player 2`, "Leg difference"] +
+        as.numeric(results.bronze$`Legs 2`) -
+        as.numeric(results.bronze$`Legs 1`)
+      if (results.bronze$`Legs 1` > results.bronze$`Legs 2`) {
+        results.table[results.table$Player == results.bronze$`Player 1`, "Matches won"] <-
+          results.table[results.table$Player == results.bronze$`Player 1`, "Matches won"] + 1
+      } else {
+        results.table[results.table$Player == results.bronze$`Player 2`, "Matches won"] <-
+          results.table[results.table$Player == results.bronze$`Player 2`, "Matches won"] + 1
+      }
+    }
+    
+    results.table[results.table$Player == results.final$`Player 1`, "Legs won"] <-
+      results.table[results.table$Player == results.final$`Player 1`, "Legs won"] +
+      as.numeric(results.final$`Legs 1`)
+    results.table[results.table$Player == results.final$`Player 2`, "Legs won"] <-
+      results.table[results.table$Player == results.final$`Player 2`, "Legs won"] +
+      as.numeric(results.final$`Legs 2`)
+    results.table[results.table$Player == results.final$`Player 1`, "Leg difference"] <-
+      results.table[results.table$Player == results.final$`Player 1`, "Leg difference"] +
+      as.numeric(results.final$`Legs 1`) -
+      as.numeric(results.final$`Legs 2`)
+    results.table[results.table$Player == results.final$`Player 2`, "Leg difference"] <-
+      results.table[results.table$Player == results.final$`Player 2`, "Leg difference"] +
+      as.numeric(results.final$`Legs 2`) -
+      as.numeric(results.final$`Legs 1`)
+    if (results.final$`Legs 1` > results.final$`Legs 2`) {
+      results.table[results.table$Player == results.final$`Player 1`, "Matches won"] <-
+        results.table[results.table$Player == results.final$`Player 1`, "Matches won"] + 1
+    } else {
+      results.table[results.table$Player == results.final$`Player 2`, "Matches won"] <-
+        results.table[results.table$Player == results.final$`Player 2`, "Matches won"] + 1
+    }
+    
+    results.table[results.table$Player == results.checkout$`Player`, "Bonus points"] <- 1
+    
+    if (nrow(results.oneEighty) > 0) {
+      for (i in 1:nrow(results.oneEighty)) {
+        results.table[results.table$Player == results.oneEighty$`Player`[i], "Bonus points"] <-
+          results.table[results.table$Player == results.oneEighty$`Player`[i], "Bonus points"] +
+          2 * results.oneEighty$`180s`[i]
+      }
+    }
+    
     results.table <- results.table %>%
       arrange(desc(Points),
               desc(`Matches won`),
@@ -547,6 +638,7 @@ server <- function(input, output, session) {
               desc(`Bonus points`))
     
     # if bronze match was played, maybe switch is needed
+    # or if not, a change may still be needed
     # if (nrow(results.bronze) == 1) {
     #   results.table[results.table$Player == results.bronze$`Player 1`, "Points"] <- 4
     #   results.table[results.table$Player == results.bronze$`Player 2`, "Points"] <- 4
