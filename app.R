@@ -294,7 +294,7 @@ server <- function(input, output, session) {
     info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
                                        results.filtered$`Legs 2`)))
     
-    info.highestCheckout = max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
+    info.highestCheckout = max(0, subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
     info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
     
     info.table <- data.frame(
@@ -339,7 +339,7 @@ server <- function(input, output, session) {
     info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
                                        results.filtered$`Legs 2`)))
     
-    info.highestCheckout = max(subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
+    info.highestCheckout = max(0, subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
     info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
     
     info.table <- data.frame(
@@ -369,7 +369,6 @@ server <- function(input, output, session) {
     results.round <- results %>%
       filter(Season == input$season, Round == input$round, Phase == "Group phase")
     
-    # Initialize player statistics
     players <- unique(c(results.round$`Player 1`, results.round$`Player 2`))
     results.table <- data.frame(
       Player = players,
@@ -383,14 +382,12 @@ server <- function(input, output, session) {
       check.names = FALSE
     )
     
-    # Process each match and update statistics
     for (i in 1:nrow(results.round)) {
       player1 <- results.round$`Player 1`[i]
       player2 <- results.round$`Player 2`[i]
       result1 <- as.numeric(results.round$`Legs 1`[i])
       result2 <- as.numeric(results.round$`Legs 2`[i])
       
-      # Update legs won and lost
       results.table[results.table$Player == player1, "Legs won"] <-
         results.table[results.table$Player == player1, "Legs won"] + result1
       results.table[results.table$Player == player1, "Legs lost"] <-
@@ -400,7 +397,6 @@ server <- function(input, output, session) {
       results.table[results.table$Player == player2, "Legs lost"] <-
         results.table[results.table$Player == player2, "Legs lost"] + result1
       
-      # Update points
       if (result1 > result2) {
         results.table[results.table$Player == player1, "Points"] <-
           results.table[results.table$Player == player1, "Points"] + 1
@@ -418,15 +414,12 @@ server <- function(input, output, session) {
       }
     }
     
-    # Calculate leg difference
     results.table <- results.table %>%
       mutate(`Leg difference` = `Legs won` - `Legs lost`)
     
-    # Sort the table by Points, LegDifference, and LegsWon
     results.table <- results.table %>%
       arrange(desc(Points), desc(`Leg difference`), desc(`Legs won`))
     
-    # Sort the table based on score against each other if needed
     for (i in 2:nrow(results.table)) {
       if (results.table$Points[i-1] == results.table$Points[i] &
           results.table$`Leg difference`[i-1] == results.table$`Leg difference`[i] &
@@ -448,7 +441,6 @@ server <- function(input, output, session) {
       }
     }
     
-    # Add row numbers
     results.table <- results.table %>%
       mutate("#" = as.character(row_number())) %>%
       select("#", everything())
@@ -508,14 +500,13 @@ server <- function(input, output, session) {
   
   calculateRoundStandingsTable <- function() {
     
-    results.group <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Group phase")
+    results.group <- calculateRoundTable()
     results.bronze <- results %>%
       filter(Season == input$season, Round == input$round, Phase == "Bronze match")
     results.final <- results %>%
       filter(Season == input$season, Round == input$round, Phase == "Final")
     
-    players <- unique(c(results.group$`Player 1`, results.group$`Player 2`))
+    players <- results.group$Player
     results.table <- data.frame(
       Player = players,
       `Matches won` = rep(0, length(players)),
@@ -528,15 +519,19 @@ server <- function(input, output, session) {
     )
     
     if (results.final$`Legs 1` > results.final$`Legs 2`) {
-      results.table[results.table$Player == results.final$`Player 1`, "Points"] <-
-        results.table[results.table$Player == results.final$`Player 1`, "Points"] + 8
-      results.table[results.table$Player == results.final$`Player 2`, "Points"] <-
-        results.table[results.table$Player == results.final$`Player 2`, "Points"] + 6
+      results.table[results.table$Player == results.final$`Player 1`, "Points"] <- 8
+      results.table[results.table$Player == results.final$`Player 2`, "Points"] <- 6
     } else {
-      results.table[results.table$Player == results.final$`Player 2`, "Points"] <-
-        results.table[results.table$Player == results.final$`Player 2`, "Points"] + 8
-      results.table[results.table$Player == results.final$`Player 1`, "Points"] <-
-        results.table[results.table$Player == results.final$`Player 1`, "Points"] + 6
+      results.table[results.table$Player == results.final$`Player 2`, "Points"] <- 8
+      results.table[results.table$Player == results.final$`Player 1`, "Points"] <- 6
+    }
+    
+    if (nrow(results.bronze) == 1) {
+      results.table[results.table$Player == results.bronze$`Player 1`, "Points"] <- 4
+      results.table[results.table$Player == results.bronze$`Player 2`, "Points"] <- 4
+    } else {
+      results.table[results.table$Player == results.group$Player[3], "Points"] <- 4
+      results.table[results.table$Player == results.group$Player[4], "Points"] <- 4
     }
     
     results.table <- results.table %>%
