@@ -501,6 +501,8 @@ server <- function(input, output, session) {
   calculateRoundStandingsTable <- function() {
     
     results.group <- calculateRoundTable()
+    results.semi <- results %>%
+      filter(Season == input$season, Round == input$round, Phase == "Semi-final")
     results.bronze <- results %>%
       filter(Season == input$season, Round == input$round, Phase == "Bronze match")
     results.final <- results %>%
@@ -526,13 +528,16 @@ server <- function(input, output, session) {
       results.table[results.table$Player == results.final$`Player 1`, "Points"] <- 6
     }
     
-    if (nrow(results.bronze) == 1) {
-      results.table[results.table$Player == results.bronze$`Player 1`, "Points"] <- 4
-      results.table[results.table$Player == results.bronze$`Player 2`, "Points"] <- 4
-    } else {
-      results.table[results.table$Player == results.group$Player[3], "Points"] <- 4
-      results.table[results.table$Player == results.group$Player[4], "Points"] <- 4
+    for (i in 1:nrow(results.semi)) {
+      if (results.semi$`Legs 1`[i] > results.semi$`Legs 2`[i]) {
+        results.table[results.table$Player == results.semi$`Player 2`[i], "Points"] <- 4
+      } else {
+        results.table[results.table$Player == results.semi$`Player 1`[i], "Points"] <- 4
+      }
     }
+    
+    results.table[results.table$Player == results.group$`Player`[5], "Points"] <- 2
+    results.table[results.table$Player == results.group$`Player`[6], "Points"] <- 1
     
     results.table <- results.table %>%
       arrange(desc(Points),
@@ -540,6 +545,14 @@ server <- function(input, output, session) {
               desc(`Leg difference`),
               desc(`Legs won`),
               desc(`Bonus points`))
+    
+    # if bronze match was played, maybe switch is needed
+    # if (nrow(results.bronze) == 1) {
+    #   results.table[results.table$Player == results.bronze$`Player 1`, "Points"] <- 4
+    #   results.table[results.table$Player == results.bronze$`Player 2`, "Points"] <- 4
+    # } else if (FALSE) {
+    #   print()
+    # }
     
     results.table <- results.table %>%
       mutate("#" = as.character(row_number())) %>%
