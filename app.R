@@ -123,11 +123,17 @@ ui <- fluidPage(
     
     sidebarPanel(width = 3,
                  
-                 conditionalPanel(condition = "output.showInfo == true",
+                 conditionalPanel(condition = "output.showSeasonInfo == true",
                                   class = "padding-container",
                                   helpText("Season info"),
-                                  reactableOutput("infoTable")
+                                  reactableOutput("seasonInfoTable")
                                   ),
+                 
+                 conditionalPanel(condition = "output.showRoundInfo == true",
+                                  class = "padding-container",
+                                  helpText("Round info"),
+                                  reactableOutput("roundInfoTable")
+                 ),
                  
                  conditionalPanel(condition = "output.showSeason == true",
                                   selectInput(
@@ -199,10 +205,6 @@ ui <- fluidPage(
                                      ),
                                      column(6,
                                             div(class = "title-container-2",
-                                                strong("Round info")),
-                                            div(class = "subtable-container",
-                                                reactableOutput("roundInfoTable")),
-                                            div(class = "title-container-2",
                                                 strong("Bonus points")),
                                             div(class = "subtitle-container", "Highest checkout"),
                                             div(class = "subtable-container",
@@ -249,10 +251,15 @@ server <- function(input, output, session) {
     updateSelectInput(session, "round", choices = round_choices, selected = max_round)
   })
   
-  output$showInfo <- reactive({
+  output$showSeasonInfo <- reactive({
     ifelse(input$plotTabs == 1 | input$plotTabs == 2, TRUE, FALSE)
   })
-  outputOptions(output, "showInfo", suspendWhenHidden = FALSE)
+  outputOptions(output, "showSeasonInfo", suspendWhenHidden = FALSE)
+  
+  output$showRoundInfo <- reactive({
+    ifelse(input$plotTabs == 3, TRUE, FALSE)
+  })
+  outputOptions(output, "showRoundInfo", suspendWhenHidden = FALSE)
   
   output$showSeason <- reactive({
     ifelse(input$plotTabs == 2 | input$plotTabs == 3, TRUE, FALSE)
@@ -591,7 +598,7 @@ server <- function(input, output, session) {
     return(results.matches)
   }
   
-  output$infoTable <- renderReactable({
+  output$seasonInfoTable <- renderReactable({
     reactable(
       calculateSeasonInfo(),
       columns = list(
