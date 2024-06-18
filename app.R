@@ -290,10 +290,20 @@ server <- function(input, output, session) {
     info.rounds = max(as.numeric(results.filtered$Round))
     info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
                                          results.filtered$`Player 2`)))
+    
+    winner1 = results.filtered %>%
+      filter(Phase == "Final",`Legs 1` > `Legs 2`) %>%
+      select(`Player 1`)
+    colnames(winner1) <- c("Player")
+    winner2 = results.filtered %>%
+      filter(Phase == "Final",`Legs 2` > `Legs 1`) %>%
+      select(`Player 2`)
+    colnames(winner2) <- c("Player")
+    info.uniqueWinners = nrow(unique(rbind(winner1, winner2)))
+    
     info.matchesPlayed = nrow(results.filtered)
     info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
                                        results.filtered$`Legs 2`)))
-    
     info.highestCheckout = max(0, subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
     info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
     
@@ -302,6 +312,7 @@ server <- function(input, output, session) {
         "Year",
         "Rounds",
         "Unique players",
+        "Unique winners",
         "Matches played",
         "Legs played",
         "Highest checkout",
@@ -311,6 +322,7 @@ server <- function(input, output, session) {
         info.year,
         info.rounds,
         info.uniquePlayers,
+        info.uniqueWinners,
         info.matchesPlayed,
         info.legsPlayed,
         info.highestCheckout,
@@ -637,14 +649,24 @@ server <- function(input, output, session) {
               desc(`Legs won`),
               desc(`Bonus points`))
     
-    # if bronze match was played, maybe switch is needed
-    # or if not, a change may still be needed
-    # if (nrow(results.bronze) == 1) {
-    #   results.table[results.table$Player == results.bronze$`Player 1`, "Points"] <- 4
-    #   results.table[results.table$Player == results.bronze$`Player 2`, "Points"] <- 4
-    # } else if (FALSE) {
-    #   print()
-    # }
+    if (nrow(results.bronze) == 1) {
+      if (results.bronze$`Legs 1` > results.bronze$`Legs 2` &
+          results.table$`Player`[4] == results.bronze$`Player 1`) {
+        tmp_row <- results.table[3,]
+        results.table[3,] <- results.table[4,]
+        results.table[4,] <- tmp_row
+      } else if (results.bronze$`Legs 2` > results.bronze$`Legs 1` &
+                 results.table$`Player`[4] == results.bronze$`Player 2`) {
+        tmp_row <- results.table[3,]
+        results.table[3,] <- results.table[4,]
+        results.table[4,] <- tmp_row
+      }
+    } else if (results.group[results.group$Player == results.table$Player[3], "#"] >
+               results.group[results.group$Player == results.table$Player[4], "#"]) {
+      tmp_row <- results.table[3,]
+      results.table[3,] <- results.table[4,]
+      results.table[4,] <- tmp_row
+    }
     
     results.table <- results.table %>%
       mutate("#" = as.character(row_number())) %>%
@@ -843,6 +865,15 @@ server <- function(input, output, session) {
   output$roundStandingsTable <- renderReactable({
     reactable(
       calculateRoundStandingsTable(),
+      rowStyle = function(index) {
+        if (index == 1) {
+          list(background = "#f4c136")
+        } else if (index == 2) {
+          list(background = "#B4B4B4")
+        } else if (index == 3) {
+          list(background = "#AD8A56")
+        }
+      },
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Player = colDef(minWidth = 275),
@@ -868,6 +899,15 @@ server <- function(input, output, session) {
   output$standingsTable <- renderReactable({
     reactable(
       calculateStandingsTable(),
+      rowStyle = function(index) {
+        if (index == 1) {
+          list(background = "#f4c136")
+        } else if (index == 2) {
+          list(background = "#B4B4B4")
+        } else if (index == 3) {
+          list(background = "#AD8A56")
+        }
+      },
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Player = colDef(minWidth = 275),
