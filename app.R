@@ -696,9 +696,26 @@ server <- function(input, output, session) {
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
       for (j in 1:nrow(results.current)) {
+        if (j == 1) {
+          results.table[results.table$Player == results.current$Player[j], "Nights won"] <-
+            results.table[results.table$Player == results.current$Player[j], "Nights won"] + 1
+        }
+        if (j <= 4) {
+          results.table[results.table$Player == results.current$Player[j], "Top-4 finishes"] <-
+            results.table[results.table$Player == results.current$Player[j], "Top-4 finishes"] + 1
+        }
         results.table[results.table$Player == results.current$Player[j], "Points"] <-
           results.table[results.table$Player == results.current$Player[j], "Points"] +
           results.current$Points[j] + results.current$`Bonus points`[j]
+        results.table[results.table$Player == results.current$Player[j], "Legs won"] <-
+          results.table[results.table$Player == results.current$Player[j], "Legs won"] +
+          results.current$`Legs won`[j]
+        results.table[results.table$Player == results.current$Player[j], "Leg difference"] <-
+          results.table[results.table$Player == results.current$Player[j], "Leg difference"] +
+          results.current$`Leg difference`[j]
+        results.table[results.table$Player == results.current$Player[j], "Matches won"] <-
+          results.table[results.table$Player == results.current$Player[j], "Matches won"] +
+          results.current$`Matches won`[j]
       }
     }
 
