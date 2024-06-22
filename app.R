@@ -376,10 +376,10 @@ server <- function(input, output, session) {
     return(info.table)
   }
   
-  calculateRoundTable <- function() {
+  calculateRoundTable <- function(season, round) {
     
     results.round <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Group phase")
+      filter(Season == season, Round == round, Phase == "Group phase")
     
     players <- unique(c(results.round$`Player 1`, results.round$`Player 2`))
     results.table <- data.frame(
@@ -487,10 +487,10 @@ server <- function(input, output, session) {
     return(results.bronze)
   }
   
-  calculateHighestCheckoutTable <- function() {
+  calculateHighestCheckoutTable <- function(season, round) {
     
     bonus.round.checkout <- bonus %>%
-      filter(Season == input$season, Round == input$round, as.numeric(Bonus) < 180) %>%
+      filter(Season == season, Round == round, as.numeric(Bonus) < 180) %>%
       select("Player", "Bonus")
     
     colnames(bonus.round.checkout) <- c("Player", "Checkout")
@@ -498,10 +498,10 @@ server <- function(input, output, session) {
     return(bonus.round.checkout)
   }
   
-  calculateOneEightyTable <- function() {
+  calculateOneEightyTable <- function(season, round) {
     
     bonus.round.oneEighty <- bonus %>%
-      filter(Season == input$season, Round == input$round, as.numeric(Bonus) == 180) %>%
+      filter(Season == season, Round == round, as.numeric(Bonus) == 180) %>%
       select("Player", "Bonus") %>%
       group_by(Player) %>%
       summarise("180s" = n()) %>%
@@ -510,17 +510,17 @@ server <- function(input, output, session) {
     return(bonus.round.oneEighty)
   }
   
-  calculateRoundStandingsTable <- function() {
+  calculateRoundStandingsTable <- function(season, round) {
     
-    results.group <- calculateRoundTable()
+    results.group <- calculateRoundTable(season, round)
     results.semi <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Semi-final")
+      filter(Season == season, Round == round, Phase == "Semi-final")
     results.bronze <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Bronze match")
+      filter(Season == season, Round == round, Phase == "Bronze match")
     results.final <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Final")
-    results.checkout <- calculateHighestCheckoutTable()
-    results.oneEighty <- calculateOneEightyTable()
+      filter(Season == season, Round == round, Phase == "Final")
+    results.checkout <- calculateHighestCheckoutTable(season, round)
+    results.oneEighty <- calculateOneEightyTable(season, round)
     
     players <- results.group$Player
     results.table <- data.frame(
@@ -675,10 +675,10 @@ server <- function(input, output, session) {
     return(results.table)
   }
   
-  calculateStandingsTable <- function() {
+  calculateStandingsTable <- function(season) {
     
     results.season <- results %>%
-      filter(Season == max(results$Season))
+      filter(Season == season)
     
     players <- unique(c(results.season$`Player 1`, results.season$`Player 2`))
     results.table <- data.frame(
@@ -692,7 +692,20 @@ server <- function(input, output, session) {
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-    
+
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)
+      print(results.current)
+      for (j in 1:nrow(results.current)) {
+        # print(results.current$Player[j])
+        # print(results.current$Points[j])
+        # print(results.current$`Bonus points`[j])
+        results.table[results.table$Player == results.current$Player[j], "Points"] <-
+          results.table[results.table$Player == results.current$Player[j], "Points"] +
+          results.current$Points[j] + results.current$`Bonus points`[j]
+      }
+    }
+
     results.table <- results.table %>%
       arrange(desc(Points),
               desc(`Nights won`),
@@ -700,7 +713,7 @@ server <- function(input, output, session) {
               desc(`Matches won`),
               desc(`Leg difference`),
               desc(`Legs won`))
-    
+
     results.table <- results.table %>%
       mutate("#" = as.character(row_number())) %>%
       select("#", everything())
@@ -737,7 +750,7 @@ server <- function(input, output, session) {
   
   output$roundTable <- renderReactable({
     reactable(
-      calculateRoundTable(),
+      calculateRoundTable(input$season, input$round),
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Player = colDef(minWidth = 275),
@@ -834,7 +847,7 @@ server <- function(input, output, session) {
   
   output$highestCheckoutTable  <- renderReactable({
     reactable(
-      calculateHighestCheckoutTable(),
+      calculateHighestCheckoutTable(input$season, input$round),
       columns = list(
         `Player` = colDef(minWidth = 100, align = "center"),
         `Checkout` = colDef(minWidth = 50, align = "center",
@@ -849,7 +862,7 @@ server <- function(input, output, session) {
   
   output$oneEightyTable  <- renderReactable({
     reactable(
-      calculateOneEightyTable(),
+      calculateOneEightyTable(input$season, input$round),
       columns = list(
         `Player` = colDef(minWidth = 100, align = "center"),
         `180s` = colDef(minWidth = 50, align = "center",
@@ -864,10 +877,10 @@ server <- function(input, output, session) {
   
   output$roundStandingsTable <- renderReactable({
     reactable(
-      calculateRoundStandingsTable(),
+      calculateRoundStandingsTable(input$season, input$round),
       rowStyle = function(index) {
         if (index == 1) {
-          list(background = "#f4c136")
+          list(background = "#F4C136")
         } else if (index == 2) {
           list(background = "#B4B4B4")
         } else if (index == 3) {
@@ -887,7 +900,7 @@ server <- function(input, output, session) {
         ),
         `Bonus points` = colDef(maxWidth = 125, align = "center",
                         style = function(value) {
-                          list(background = "#b8c8d2")
+                          list(background = "#B8B8D2")
                         }
         )
       ),
@@ -898,10 +911,10 @@ server <- function(input, output, session) {
   
   output$standingsTable <- renderReactable({
     reactable(
-      calculateStandingsTable(),
+      calculateStandingsTable(max(results$Season)),
       rowStyle = function(index) {
         if (index == 1) {
-          list(background = "#f4c136")
+          list(background = "#F4C136")
         } else if (index == 2) {
           list(background = "#B4B4B4")
         } else if (index == 3) {
