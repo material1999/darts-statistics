@@ -281,9 +281,9 @@ server <- function(input, output, session) {
   })
   outputOptions(output, "showRival", suspendWhenHidden = FALSE)
   
-  calculateSeasonInfo <- function() {
+  calculateSeasonInfo <- function(season) {
     
-    results.filtered = filter(results, Season == max(results$Season))
+    results.filtered = filter(results, Season == season)
     bonus.filtered = filter(bonus, Season == max(bonus$Season))
     
     info.year = results.filtered$Season[1]
@@ -333,10 +333,10 @@ server <- function(input, output, session) {
     return(info.table)
   }
   
-  calculateRoundInfo <- function() {
+  calculateRoundInfo <- function(season, round) {
     
-    results.filtered = filter(results, Season == input$season, Round == input$round)
-    bonus.filtered = filter(bonus, Season == input$season, Round == input$round)
+    results.filtered = filter(results, Season == season, Round == round)
+    bonus.filtered = filter(bonus, Season == season, Round == round)
     
     info.date = as.character(
       paste(
@@ -460,28 +460,28 @@ server <- function(input, output, session) {
     return(results.table)
   }
   
-  calculateSemiFinalTable <- function() {
+  calculateSemiFinalTable <- function(season, round) {
     
     results.semiFinals <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Semi-final") %>%
+      filter(Season == season, Round == round, Phase == "Semi-final") %>%
       select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
     return(results.semiFinals)
   }
   
-  calculateFinalTable <- function() {
+  calculateFinalTable <- function(season, round) {
     
     results.final <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Final") %>%
+      filter(Season == season, Round == round, Phase == "Final") %>%
       select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
     return(results.final)
   }
   
-  calculateBronzeTable <- function() {
+  calculateBronzeTable <- function(season, round) {
     
     results.bronze <- results %>%
-      filter(Season == input$season, Round == input$round, Phase == "Bronze match") %>%
+      filter(Season == season, Round == round, Phase == "Bronze match") %>%
       select("Player 1", "Legs 1", "Legs 2", "Player 2")
     
     return(results.bronze)
@@ -695,11 +695,7 @@ server <- function(input, output, session) {
 
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
-      print(results.current)
       for (j in 1:nrow(results.current)) {
-        # print(results.current$Player[j])
-        # print(results.current$Points[j])
-        # print(results.current$`Bonus points`[j])
         results.table[results.table$Player == results.current$Player[j], "Points"] <-
           results.table[results.table$Player == results.current$Player[j], "Points"] +
           results.current$Points[j] + results.current$`Bonus points`[j]
@@ -721,10 +717,10 @@ server <- function(input, output, session) {
     return(results.table)
   }
   
-  calculateRoundMatches <- function() {
+  calculateRoundMatches <- function(season, round) {
     
     results.matches <- results %>%
-      filter(Season == input$season, Round == input$round)
+      filter(Season == season, Round == round)
     
     results.matches <- results.matches %>%
       mutate("#" = as.character(row_number())) %>%
@@ -735,7 +731,7 @@ server <- function(input, output, session) {
   
   output$seasonInfoTable <- renderReactable({
     reactable(
-      calculateSeasonInfo(),
+      calculateSeasonInfo(max(results$Season)),
       columns = list(
         RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
         Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
@@ -772,7 +768,7 @@ server <- function(input, output, session) {
   
   output$semiFinalTable  <- renderReactable({
     reactable(
-      calculateSemiFinalTable(),
+      calculateSemiFinalTable(input$season, input$round),
       columns = list(
         `Player 1` = colDef(minWidth = 100, align = "center"),
         `Legs 1` = colDef(minWidth = 50, align = "center",
@@ -792,7 +788,7 @@ server <- function(input, output, session) {
   
   output$finalTable  <- renderReactable({
     reactable(
-      calculateFinalTable(),
+      calculateFinalTable(input$season, input$round),
       columns = list(
         `Player 1` = colDef(minWidth = 100, align = "center"),
         `Legs 1` = colDef(minWidth = 50, align = "center",
@@ -812,7 +808,7 @@ server <- function(input, output, session) {
   
   output$bronzeTable  <- renderReactable({
     reactable(
-      calculateBronzeTable(),
+      calculateBronzeTable(input$season, input$round),
       columns = list(
         `Player 1` = colDef(minWidth = 100, align = "center"),
         `Legs 1` = colDef(minWidth = 50, align = "center",
@@ -832,7 +828,7 @@ server <- function(input, output, session) {
   
   output$roundInfoTable <- renderReactable({
     reactable(
-      calculateRoundInfo(),
+      calculateRoundInfo(input$season, input$round),
       columns = list(
         RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
         Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
@@ -942,7 +938,7 @@ server <- function(input, output, session) {
   
   output$roundMatches <- renderReactable({
     reactable(
-      calculateRoundMatches(),
+      calculateRoundMatches(input$season, input$round),
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Phase = colDef(minWidth = 100),
