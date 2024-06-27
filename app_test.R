@@ -18,7 +18,7 @@ library(bslib)
 
 # Load data --------------------------------------------------------------------
 
-# setwd("~/Documents/Programming/R/darts-statistics/")
+setwd("~/Documents/Programming/R/darts-statistics/")
 
 results <- data.frame()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
