@@ -175,7 +175,15 @@ ui <- fluidPage(
                                    div(class = "title-container",
                                        strong("Season standings")),
                                    div(class = "table-container",
-                                       reactableOutput("standingsTable"))),
+                                       reactableOutput("standingsTable")),
+                                   div(class = "title-container",
+                                       strong("Points per round")),
+                                   div(class = "table-container",
+                                       reactableOutput("pointsPerRoundTable")),
+                                   div(class = "title-container",
+                                       strong("Interactive visuals")),
+                                   div(class = "table-container",
+                                       plotlyOutput("standingsPlot"))),
                           tabPanel("Past seasons", value = 2,
                                    div(class = "title-container",
                                        p("Work in progress..."))),
@@ -734,6 +742,80 @@ server <- function(input, output, session) {
     return(results.table)
   }
   
+  calculatePointsPerRoundTable <- function(season) {
+    
+    results.season <- results %>%
+      filter(Season == season)
+    
+    players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    results.table <- data.frame(
+      Player = players,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)
+      new_column_name <- paste("Round", as.character(r), sep = " ")
+      results.table[, new_column_name] <- rep(0, length(players))
+      for (j in 1:nrow(results.current)) {
+        results.table[results.table$Player == results.current$Player[j], new_column_name] <-
+          results.table[results.table$Player == results.current$Player[j], new_column_name] +
+          results.current$Points[j] + results.current$`Bonus points`[j]
+      }
+    }
+    
+    results.table <- results.table %>%
+      rowwise() %>%
+      mutate(Total = sum(c_across(starts_with("Round")), na.rm = TRUE)) %>%
+      mutate(Average = mean(c_across(starts_with("Round")), na.rm = TRUE)) %>%
+      arrange(desc(Total))
+    
+    return(results.table)
+    
+  }
+  
+  createStandingsPlot <- function(season) {
+    
+    results.season <- results %>%
+      filter(Season == season)
+    
+    players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    results.table <- data.frame(
+      Player = players,
+      `Round 0` = rep(0, length(players)),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)
+      previous_column_name = paste("Round", as.character(as.numeric(r) - 1), sep = " ")
+      new_column_name <- paste("Round", r, sep = " ")
+      results.table[, new_column_name] <- results.table[previous_column_name]
+      for (j in 1:nrow(results.current)) {
+        results.table[results.table$Player == results.current$Player[j], new_column_name] <-
+          results.table[results.table$Player == results.current$Player[j], new_column_name] +
+          results.current$Points[j] + results.current$`Bonus points`[j]
+      }
+    }
+    
+    results.long <- results.table %>%
+      pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Points")
+    
+    ggplot(results.long, aes(x = Round, y = Points, group = Player, color = Player)) +
+      geom_line(linewidth = 0.75) +
+      geom_point(size = 1.5) +
+      theme_minimal() +
+      labs(title = "Standings over rounds",
+           x = "Rounds",
+           y = "Points") +
+      scale_color_viridis_d() +
+      theme(legend.position = "right",
+            plot.title = element_text(hjust = 0.5))
+    
+  }
+  
   calculateRoundMatches <- function(season, round) {
     
     results.matches <- results %>%
@@ -893,11 +975,11 @@ server <- function(input, output, session) {
       calculateRoundStandingsTable(input$season, input$round),
       rowStyle = function(index) {
         if (index == 1) {
-          list(background = "#F4C136")
+          list(background = "#f4c136")
         } else if (index == 2) {
-          list(background = "#B4B4B4")
+          list(background = "#c0c0c0")
         } else if (index == 3) {
-          list(background = "#AD8A56")
+          list(background = "#cd7f32")
         }
       },
       columns = list(
@@ -913,7 +995,7 @@ server <- function(input, output, session) {
         ),
         `Bonus points` = colDef(maxWidth = 125, align = "center",
                         style = function(value) {
-                          list(background = "#B8B8D2")
+                          list(background = "#b8b8d2")
                         }
         )
       ),
@@ -927,11 +1009,11 @@ server <- function(input, output, session) {
       calculateStandingsTable(max(results$Season)),
       rowStyle = function(index) {
         if (index == 1) {
-          list(background = "#F4C136")
+          list(background = "#f4c136")
         } else if (index == 2) {
-          list(background = "#B4B4B4")
+          list(background = "#c0c0c0")
         } else if (index == 3) {
-          list(background = "#AD8A56")
+          list(background = "#cd7f32")
         }
       },
       columns = list(
@@ -946,11 +1028,39 @@ server <- function(input, output, session) {
                         style = function(value) {
                           list(background = "lightgrey")
                         }
-        )
+                        )
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
     )
+  })
+  
+  output$pointsPerRoundTable <- renderReactable({
+    reactable(
+      calculatePointsPerRoundTable(max(results$Season)),
+      defaultColDef = colDef(
+        align = "center"
+      ),
+      columns = list(
+        Player = colDef(minWidth = 275, align = "left"),
+        Total = colDef(maxWidth = 75,
+                       style = function(value) {
+                         list(background = "lightgrey")
+                       }
+                       ),
+        Average = colDef(maxWidth = 100,
+                         style = function(value) {
+                           list(background = "#b8b8d2")
+                         }
+                         )
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
+  output$standingsPlot <- renderPlotly({
+    createStandingsPlot(max(results$Season))
   })
   
   output$roundMatches <- renderReactable({
