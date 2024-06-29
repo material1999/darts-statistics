@@ -65,7 +65,14 @@ rm(results.current)
 
 ui <- fluidPage(
   
+  tags$head(
+    tags$link(rel = "icon", href = "favicon.png")
+  ),
+  
   tags$style(HTML("
+    body {
+      overflow-y: scroll;
+    }
     .nav {
       margin-bottom: 20px;
     }
@@ -113,9 +120,23 @@ ui <- fluidPage(
     .padding-container {
       padding-bottom: 20px;
     }
+    .title-panel {
+      font-size: 1.5em;
+    }
   ")),
   
-  titlePanel("Csuka Utca Invitational Masters - Statistics"),
+  fluidRow(
+    style = "margin: 10px; display: flex; align-items: center;",
+    column(9,
+           align = "left",
+           titlePanel(div(class = "title-panel",
+                          "Csuka Utca Invitational Masters - Statistics"))
+    ),
+    column(3,
+           align = "right",
+           img(src = "favicon.png", width = "150px", height = "150px")
+    )
+  ),
   
   br(),
   
