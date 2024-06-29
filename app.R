@@ -121,7 +121,7 @@ ui <- fluidPage(
       padding-bottom: 20px;
     }
     .title-panel {
-      font-size: 1.5em;
+      font-size: 1.3em;
     }
   ")),
   
@@ -134,7 +134,7 @@ ui <- fluidPage(
     ),
     column(3,
            align = "right",
-           img(src = "favicon.png", width = "150px", height = "150px")
+           img(src = "favicon.png", width = "125px", height = "125px")
     )
   ),
   
