@@ -84,8 +84,8 @@ ui <- fluidPage(
       font-size: 2em;
     }
     .title-container {
-      padding-left: 20px;
-      padding-right: 20px;
+      padding-left: 10px;
+      padding-right: 10px;
       padding-top: 20px;
       font-size: 2em;
     }
@@ -102,16 +102,20 @@ ui <- fluidPage(
       font-size: 2em;
     }
     .table-container {
-      padding: 20px;
-    }
-    .table-container-2 {
-      padding-left: 20px;
+      padding-left: 10px;
       padding-right: 20px;
       padding-bottom: 20px;
+      padding-top: 20px;
+    }
+    .table-container-2 {
+      padding-left: 10px;
+      padding-right: 20px;
+      padding-bottom: 20px;
+      padding-top: 20px;
     }
     .subtable-container {
       padding-left: 0px;
-      padding-right: 0px;
+      padding-right: 10px;
       padding-top: 20px;
       padding-bottom: 20px;
     }
@@ -197,7 +201,7 @@ ui <- fluidPage(
     
     mainPanel(width = 9,
               
-              style = "padding-left: 10px; background-color: #f5f5f5;",
+              style = "padding-left: 0px; background-color: #f5f5f5;",
               
               tabsetPanel(id = "plotTabs",
                           tabPanel("Current season", value = 1,
