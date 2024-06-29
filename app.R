@@ -65,6 +65,8 @@ rm(results.current)
 
 ui <- fluidPage(
   
+  style = "padding: 0px; background-color: #f5f5f5;",
+  
   tags$head(
     tags$link(rel = "icon", href = "favicon.png")
   ),
@@ -122,11 +124,12 @@ ui <- fluidPage(
     }
     .title-panel {
       font-size: 1.3em;
+      padding-bottom: 20px;
     }
   ")),
   
   fluidRow(
-    style = "margin: 10px; display: flex; align-items: center;",
+    style = "margin: 0px; display: flex; align-items: center; background-color: #e9e9e9;",
     column(9,
            align = "left",
            titlePanel(div(class = "title-panel",
@@ -144,6 +147,8 @@ ui <- fluidPage(
   sidebarLayout(
     
     sidebarPanel(width = 3,
+                 
+                 style = "margin-left: 20px; margin-right: 10px; background-color: #efefef;",
                  
                  conditionalPanel(condition = "output.showSeasonInfo == true",
                                   class = "padding-container",
@@ -191,6 +196,8 @@ ui <- fluidPage(
     ),
     
     mainPanel(width = 9,
+              
+              style = "padding-left: 10px; background-color: #f5f5f5;",
               
               tabsetPanel(id = "plotTabs",
                           tabPanel("Current season", value = 1,
@@ -860,7 +867,7 @@ server <- function(input, output, session) {
       rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
       borderless = TRUE, outlined = TRUE,
       theme = reactableTheme(
-        backgroundColor = "#F7F7F7"
+        backgroundColor = "#f7f7f7"
       )
     )
   })
@@ -957,7 +964,7 @@ server <- function(input, output, session) {
       rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
       borderless = TRUE, outlined = TRUE,
       theme = reactableTheme(
-        backgroundColor = "#F7F7F7"
+        backgroundColor = "#f7f7f7"
       )
     )
   })
