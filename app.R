@@ -130,7 +130,8 @@ ui <- fluidPage(
     column(9,
            align = "left",
            titlePanel(div(class = "title-panel",
-                          "Csuka Utca Invitational Masters - Statistics"))
+                          "Csuka Utca Invitational Masters - Statistics"),
+                      windowTitle = "Csuka Utca Invitational Masters - Statistics")
     ),
     column(3,
            align = "right",
