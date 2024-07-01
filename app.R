@@ -216,7 +216,7 @@ ui <- fluidPage(
                                    div(class = "title-container",
                                        strong("Interactive visuals")),
                                    div(class = "table-container",
-                                       plotlyOutput("standingsPlot"))),
+                                       plotlyOutput("standingsPlot", height = "500px"))),
                           tabPanel("Past seasons", value = 2,
                                    div(class = "title-container",
                                        p("Work in progress..."))),
@@ -345,7 +345,8 @@ server <- function(input, output, session) {
     info.matchesPlayed = nrow(results.filtered)
     info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
                                        results.filtered$`Legs 2`)))
-    info.highestCheckout = max(0, subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
+    info.highestCheckout = max(0, as.numeric(unlist(subset(bonus.filtered,
+                                                           as.numeric(Bonus) < 180)$Bonus)))
     info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
     
     info.table <- data.frame(
@@ -801,7 +802,7 @@ server <- function(input, output, session) {
     results.table <- results.table %>%
       rowwise() %>%
       mutate(Total = sum(c_across(starts_with("Round")), na.rm = TRUE)) %>%
-      mutate(Average = mean(c_across(starts_with("Round")), na.rm = TRUE)) %>%
+      mutate(Average = round(mean(c_across(starts_with("Round")), na.rm = TRUE), 2)) %>%
       arrange(desc(Total))
     
     return(results.table)
@@ -840,7 +841,7 @@ server <- function(input, output, session) {
       geom_line(linewidth = 0.75) +
       geom_point(size = 1.5) +
       theme_minimal() +
-      labs(title = "Standings over rounds",
+      labs(title = "Points over rounds",
            x = "Rounds",
            y = "Points") +
       scale_color_viridis_d() +
@@ -1040,6 +1041,7 @@ server <- function(input, output, session) {
   output$standingsTable <- renderReactable({
     reactable(
       calculateStandingsTable(max(results$Season)),
+      defaultPageSize = 15,
       rowStyle = function(index) {
         if (index == 1) {
           list(background = "#f4c136")
@@ -1071,6 +1073,7 @@ server <- function(input, output, session) {
   output$pointsPerRoundTable <- renderReactable({
     reactable(
       calculatePointsPerRoundTable(max(results$Season)),
+      defaultPageSize = 15,
       defaultColDef = colDef(
         align = "center"
       ),
@@ -1081,7 +1084,7 @@ server <- function(input, output, session) {
                          list(background = "lightgrey")
                        }
                        ),
-        Average = colDef(maxWidth = 100,
+        Average = colDef(maxWidth = 75,
                          style = function(value) {
                            list(background = "#b8b8d2")
                          }
