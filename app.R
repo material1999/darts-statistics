@@ -63,77 +63,11 @@ rm(results.current)
 
 # Define UI --------------------------------------------------------------------
 
-ui <- fluidPage(
-  
-  style = "padding: 0px; background-color: #f5f5f5;",
-  
-  tags$head(
-    tags$link(rel = "icon", href = "favicon.png")
-  ),
-  
-  tags$style(HTML("
-    body {
-      overflow-y: scroll;
-    }
-    .nav {
-      margin-bottom: 20px;
-    }
-    .title-container-top {
-      padding-left: 20px;
-      padding-right: 20px;
-      font-size: 2em;
-    }
-    .title-container {
-      padding-left: 10px;
-      padding-right: 10px;
-      padding-top: 20px;
-      font-size: 2em;
-    }
-    .title-container-2 {
-      padding-left: 5px;
-      padding-right: 5px;
-      padding-top: 20px;
-      font-size: 2em;
-    }
-    .subtitle-container {
-      padding-left: 5px;
-      padding-right: 5px;
-      padding-top: 20px;
-      font-size: 2em;
-    }
-    .table-container {
-      padding-left: 10px;
-      padding-right: 20px;
-      padding-bottom: 20px;
-      padding-top: 20px;
-    }
-    .table-container-2 {
-      padding-left: 10px;
-      padding-right: 20px;
-      padding-bottom: 20px;
-      padding-top: 20px;
-    }
-    .subtable-container {
-      padding-left: 0px;
-      padding-right: 10px;
-      padding-top: 20px;
-      padding-bottom: 20px;
-    }
-    .hide-header {    
-      display: none;
-      visibility: collapse;
-    }
-    .padding-container {
-      padding-bottom: 20px;
-    }
-    .title-panel {
-      font-size: 1.3em;
-      padding-bottom: 20px;
-    }
-  ")),
+ui <- tagList(
   
   fluidRow(
-    style = "margin: 0px; display: flex; align-items: center; background-color: #e9e9e9;",
+    style = "margin: 0px; padding: 10px; border: 0px;
+    display: flex; align-items: center; background-color: #e9e9e9;",
     column(9,
            align = "left",
            titlePanel(div(class = "title-panel",
@@ -146,129 +80,182 @@ ui <- fluidPage(
     )
   ),
   
-  br(),
+  fluidPage(
   
-  sidebarLayout(
+    style = "background-color: #f5f5f5;",
     
-    sidebarPanel(width = 3,
-                 
-                 style = "margin-left: 20px; margin-right: 10px; background-color: #efefef;",
-                 
-                 conditionalPanel(condition = "output.showSeasonInfo == true",
-                                  class = "padding-container",
-                                  helpText("Season info"),
-                                  reactableOutput("seasonInfoTable")
-                                  ),
-                 
-                 conditionalPanel(condition = "output.showRoundInfo == true",
-                                  class = "padding-container",
-                                  helpText("Round info"),
-                                  reactableOutput("roundInfoTable")
-                 ),
-                 
-                 conditionalPanel(condition = "output.showSeason == true",
-                                  selectInput(
-                                    inputId = "season",
-                                    label = "Season:",
-                                    choices = unique(results$Season),
-                                    selected = as.character(max(results$Season))
-                                  )),
-                 
-                 conditionalPanel(condition = "output.showRound == true",
-                                  selectInput(
-                                    inputId = "round",
-                                    label = "Round:",
-                                    choices = NULL
-                                  )),
-                 
-                 conditionalPanel(condition = "output.showPlayer == true",
-                                  selectInput(
-                                    inputId = "player",
-                                    label = "Player:",
-                                    choices = sort(unique(c(results$`Player 2`,
-                                                            results$`Player 1`)))
-                                  )),
-                 
-                 conditionalPanel(condition = "output.showRival == true",
-                                  selectInput(
-                                    inputId = "rival",
-                                    label = "Rival:",
-                                    choices = sort(unique(c(results$`Player 2`,
-                                                            results$`Player 1`))),
-                                  )),
-                 
+    tags$head(
+      tags$link(rel = "icon", href = "favicon.png")
     ),
     
-    mainPanel(width = 9,
-              
-              style = "padding-left: 0px; background-color: #f5f5f5;",
-              
-              tabsetPanel(id = "plotTabs",
-                          tabPanel("Current season", value = 1,
-                                   div(class = "title-container",
-                                       strong("Season standings")),
-                                   div(class = "table-container",
-                                       reactableOutput("standingsTable")),
-                                   div(class = "title-container",
-                                       strong("Points per round")),
-                                   div(class = "table-container",
-                                       reactableOutput("pointsPerRoundTable")),
-                                   div(class = "title-container",
-                                       strong("Interactive visuals")),
-                                   div(class = "table-container",
-                                       plotlyOutput("standingsPlot", height = "500px"))),
-                          tabPanel("Past seasons", value = 2,
-                                   div(class = "title-container",
-                                       p("Work in progress..."))),
-                          tabPanel("Round results", value = 3,
-                                   div(class = "title-container",
-                                       strong("Final standings")),
-                                   div(class = "table-container",
-                                       reactableOutput("roundStandingsTable")),
-                                   div(class = "title-container-top",
-                                       strong("Group phase")),
-                                   div(class = "table-container",
-                                       reactableOutput("roundTable")),
-                                   fluidRow(
-                                     style = "margin:0px;",
-                                     column(6,
-                                            div(class = "title-container-2",
-                                                strong("Knockout phase")),
-                                            div(class = "subtitle-container", "Semi-finals"),
-                                            div(class = "subtable-container",
-                                                reactableOutput("semiFinalTable")),
-                                            div(class = "subtitle-container", "Bronze match"),
-                                            div(class = "subtable-container",
-                                                reactableOutput("bronzeTable")),
-                                            div(class = "subtitle-container", "Final"),
-                                            div(class = "subtable-container",
-                                                reactableOutput("finalTable"))
+    tags$style(HTML("
+      body {
+        overflow-y: scroll;
+      }
+      .nav {
+        margin-bottom: 20px;
+      }
+      .title-container {
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 20px;
+        font-size: 2em;
+      }
+      .subtitle-container {
+        padding-left: 0px;
+        padding-right: 0px;
+        padding-top: 20px;
+        font-size: 2em;
+      }
+      .table-container {
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-bottom: 20px;
+        padding-top: 20px;
+      }
+      .subtable-container {
+        padding-left: 0px;
+        padding-right: 0px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+      .hide-header {    
+        display: none;
+        visibility: collapse;
+      }
+      .padding-container {
+        padding-bottom: 20px;
+      }
+      .title-panel {
+        font-size: 1.3em;
+        padding-bottom: 20px;
+      }
+    ")),
+    
+    sidebarLayout(
+      
+      sidebarPanel(width = 3,
+                   
+                   style = "margin-left: 20px; margin-right: 10px; margin-top: 20px;
+                   background-color: #efefef;",
+                   
+                   conditionalPanel(condition = "output.showSeasonInfo == true",
+                                    class = "padding-container",
+                                    helpText("Season info"),
+                                    reactableOutput("seasonInfoTable")
+                                    ),
+                   
+                   conditionalPanel(condition = "output.showRoundInfo == true",
+                                    class = "padding-container",
+                                    helpText("Round info"),
+                                    reactableOutput("roundInfoTable")
+                   ),
+                   
+                   conditionalPanel(condition = "output.showSeason == true",
+                                    selectInput(
+                                      inputId = "season",
+                                      label = "Season:",
+                                      choices = unique(results$Season),
+                                      selected = as.character(max(results$Season))
+                                    )),
+                   
+                   conditionalPanel(condition = "output.showRound == true",
+                                    selectInput(
+                                      inputId = "round",
+                                      label = "Round:",
+                                      choices = NULL
+                                    )),
+                   
+                   conditionalPanel(condition = "output.showPlayer == true",
+                                    selectInput(
+                                      inputId = "player",
+                                      label = "Player:",
+                                      choices = sort(unique(c(results$`Player 2`,
+                                                              results$`Player 1`)))
+                                    )),
+                   
+                   conditionalPanel(condition = "output.showRival == true",
+                                    selectInput(
+                                      inputId = "rival",
+                                      label = "Rival:",
+                                      choices = sort(unique(c(results$`Player 2`,
+                                                              results$`Player 1`))),
+                                    )),
+                   
+      ),
+      
+      mainPanel(width = 9,
+                
+                style = "padding-left: 0px; padding-right: 20px; margin-top: 20px;
+                background-color: #f5f5f5;",
+                
+                tabsetPanel(id = "plotTabs",
+                            tabPanel("Current season", value = 1,
+                                     div(class = "title-container",
+                                         strong("Season standings")),
+                                     div(class = "table-container",
+                                         reactableOutput("standingsTable")),
+                                     div(class = "title-container",
+                                         strong("Points per round")),
+                                     div(class = "table-container",
+                                         reactableOutput("pointsPerRoundTable")),
+                                     div(class = "title-container",
+                                         strong("Interactive visuals")),
+                                     div(class = "table-container",
+                                         plotlyOutput("standingsPlot", height = "500px"))),
+                            tabPanel("Past seasons", value = 2,
+                                     div(class = "title-container",
+                                         p("Work in progress..."))),
+                            tabPanel("Round results", value = 3,
+                                     div(class = "title-container",
+                                         strong("Final standings")),
+                                     div(class = "table-container",
+                                         reactableOutput("roundStandingsTable")),
+                                     div(class = "title-container",
+                                         strong("Group phase")),
+                                     div(class = "table-container",
+                                         reactableOutput("roundTable")),
+                                     fluidRow(
+                                       style = "padding: 10px;",
+                                       column(6,
+                                              div(class = "subtitle-container",
+                                                  strong("Knockout phase")),
+                                              div(class = "subtitle-container", "Semi-finals"),
+                                              div(class = "subtable-container",
+                                                  reactableOutput("semiFinalTable")),
+                                              div(class = "subtitle-container", "Bronze match"),
+                                              div(class = "subtable-container",
+                                                  reactableOutput("bronzeTable")),
+                                              div(class = "subtitle-container", "Final"),
+                                              div(class = "subtable-container",
+                                                  reactableOutput("finalTable"))
+                                       ),
+                                       column(6,
+                                              div(class = "subtitle-container",
+                                                  strong("Bonus points")),
+                                              div(class = "subtitle-container", "Highest checkout"),
+                                              div(class = "subtable-container",
+                                                  reactableOutput("highestCheckoutTable")),
+                                              div(class = "subtitle-container", "180s"),
+                                              div(class = "subtable-container",
+                                                  reactableOutput("oneEightyTable"))
+                                       )
                                      ),
-                                     column(6,
-                                            div(class = "title-container-2",
-                                                strong("Bonus points")),
-                                            div(class = "subtitle-container", "Highest checkout"),
-                                            div(class = "subtable-container",
-                                                reactableOutput("highestCheckoutTable")),
-                                            div(class = "subtitle-container", "180s"),
-                                            div(class = "subtable-container",
-                                                reactableOutput("oneEightyTable"))
-                                     )
-                                   ),
-                                   div(class = "title-container",
-                                       strong("Match results")),
-                                   div(class = "table-container-2",
-                                       reactableOutput("roundMatches"))),
-                          tabPanel("All time table", value = 4,
-                                   div(class = "title-container",
-                                       p("Work in progress..."))),
-                          tabPanel("Rivalries", value = 5,
-                                   div(class = "title-container",
-                                       p("Work in progress..."))),
-                          tabPanel("Player bio", value = 6,
-                                   div(class = "title-container",
-                                       p("Work in progress...")))
-              )
+                                     div(class = "title-container",
+                                         strong("Match results")),
+                                     div(class = "table-container",
+                                         reactableOutput("roundMatches"))),
+                            tabPanel("All time table", value = 4,
+                                     div(class = "title-container",
+                                         p("Work in progress..."))),
+                            tabPanel("Rivalries", value = 5,
+                                     div(class = "title-container",
+                                         p("Work in progress..."))),
+                            tabPanel("Player bio", value = 6,
+                                     div(class = "title-container",
+                                         p("Work in progress...")))
+                )
+      )
     )
   )
 )
@@ -1078,7 +1065,7 @@ server <- function(input, output, session) {
         align = "center"
       ),
       columns = list(
-        Player = colDef(minWidth = 275, align = "left"),
+        Player = colDef(minWidth = 225, align = "left"),
         Total = colDef(maxWidth = 75,
                        style = function(value) {
                          list(background = "lightgrey")
