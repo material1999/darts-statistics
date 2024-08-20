@@ -856,6 +856,9 @@ server <- function(input, output, session) {
       }
     }
     
+    my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
+                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
+    
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Points")
     
@@ -866,7 +869,8 @@ server <- function(input, output, session) {
       labs(title = "Points over rounds",
            x = "Rounds",
            y = "Points") +
-      scale_color_viridis_d() +
+      scale_color_manual(values = my_custom_palette) +
+      # scale_color_viridis_d() +
       theme(legend.position = "right",
             plot.title = element_text(hjust = 0.5))
     
