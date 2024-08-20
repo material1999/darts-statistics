@@ -2,7 +2,7 @@
 
 # install.packages(c("tidyverse", "ggplot2", "shiny", "gridExtra", "plotly",
 #                    "treemapify", "readxl", "shinydashboard", "DT", "reactable",
-#                    "bslib"))
+#                    "bslib", "stringi"))
 
 library(tidyverse)
 library(ggplot2)
@@ -15,6 +15,7 @@ library(shinydashboard)
 library(DT)
 library(reactable)
 library(bslib)
+library(stringi)
 
 # Load data --------------------------------------------------------------------
 
@@ -252,8 +253,26 @@ ui <- tagList(
                                      div(class = "title-container",
                                          p("Work in progress..."))),
                             tabPanel("Player bio", value = 6,
-                                     div(class = "title-container",
-                                         p("Work in progress...")))
+                                     fluidRow(
+                                       style = "padding-left: 10px; padding-right: 10px;",
+                                       column(4,
+                                              div(class = "subtitle-container",
+                                                  style = "padding-bottom: 10px;",
+                                                  uiOutput("player_name")),
+                                              uiOutput("player_image",
+                                                       style = "padding-top: 10px;")
+                                       ),
+                                       column(2,
+                                              div(class = "subtitle-container",
+                                                  style = "padding-bottom: 10px;",
+                                                  strong("Bio"))
+                                       ),
+                                       column(6,
+                                              div(class = "subtitle-container",
+                                                  style = "padding-bottom: 10px;",
+                                                  strong("Stats"))
+                                       )
+                                     ))
                 )
       )
     )
@@ -277,6 +296,22 @@ server <- function(input, output, session) {
     round_choices <- sort(unique(results$Round[results$Season == selected_season]))
     max_round <- max(round_choices)
     updateSelectInput(session, "round", choices = round_choices, selected = max_round)
+  })
+  
+  output$player_name <- renderUI({
+    strong(input$player)
+  })
+  
+  output$player_image <- renderUI({
+    tags$figure(
+      tags$img(
+        src = stri_trans_general(tolower(input$player), "Latin-ASCII") %>%
+          gsub(" ", "_", .) %>%
+          paste0(".jpg"),
+        width = 250,
+        alt = "No image found..."
+      )
+    )
   })
   
   output$showSeasonInfo <- reactive({
