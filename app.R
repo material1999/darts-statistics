@@ -812,7 +812,7 @@ server <- function(input, output, session) {
     
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
-      new_column_name <- paste("Round", as.character(r), sep = " ")
+      new_column_name <- paste("R", as.character(r), sep = "")
       results.table[, new_column_name] <- rep(0, length(players))
       for (j in 1:nrow(results.current)) {
         results.table[results.table$Player == results.current$Player[j], new_column_name] <-
@@ -823,8 +823,8 @@ server <- function(input, output, session) {
     
     results.table <- results.table %>%
       rowwise() %>%
-      mutate(Total = sum(c_across(starts_with("Round")), na.rm = TRUE)) %>%
-      mutate(Average = round(mean(c_across(starts_with("Round")), na.rm = TRUE), 2)) %>%
+      mutate(Total = sum(c_across(starts_with("R")), na.rm = TRUE)) %>%
+      mutate(Average = round(mean(c_across(starts_with("R")), na.rm = TRUE), 2)) %>%
       arrange(desc(Total))
     
     return(results.table)
@@ -1101,10 +1101,11 @@ server <- function(input, output, session) {
       calculatePointsPerRoundTable(max(results$Season)),
       defaultPageSize = 15,
       defaultColDef = colDef(
-        align = "center"
+        align = "center",
+        maxWidth = 75
       ),
       columns = list(
-        Player = colDef(minWidth = 225, align = "left"),
+        Player = colDef(minWidth = 150, maxWidth = 1500, align = "left"),
         Total = colDef(maxWidth = 75,
                        style = function(value) {
                          list(background = "lightgrey")
