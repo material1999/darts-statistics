@@ -840,16 +840,14 @@ server <- function(input, output, session) {
     
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
     
-    # Create a table to store cumulative points for each player
     results.table <- data.frame(
       Player = players,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
     
-    # Add Round 0 with initial points
     results.table <- results.table %>%
-      mutate(`Round 0` = 0)  # Every player starts with 0 points at Round 0
+      mutate(`Round 0` = 0)
     
     cumulative_points <- rep(0, length(players))
     
@@ -858,20 +856,16 @@ server <- function(input, output, session) {
       results.table[, round_column_name] <- NA
     }
     
-    # Calculate cumulative points for each player after each round
     for (r in unique(results.season$`Round`)) {
-      results.current <- calculateRoundStandingsTable(season, r)  # Function to get current round results
+      results.current <- calculateRoundStandingsTable(season, r)
       round_column_name <- paste("Round", r, sep = " ")
       
       for (j in 1:nrow(results.current)) {
-        # Calculate points for the current round
         round_points <- results.current$Points[j] + results.current$`Bonus points`[j]
         
-        # Update cumulative points
         player_index <- which(results.table$Player == results.current$Player[j])
         cumulative_points[player_index] <- cumulative_points[player_index] + round_points
         
-        # Store cumulative points in the results table
         results.table[player_index, round_column_name] <- cumulative_points[player_index]
       }
     }
@@ -879,21 +873,20 @@ server <- function(input, output, session) {
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
                            "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
     
-    # Transform results.table to long format for plotting
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "TotalPoints") %>%
       mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
       filter(!is.na(TotalPoints))
     
-    # Ensure Round 0 is included
     results.long <- results.long %>%
       bind_rows(data.frame(Round = 0, Player = players, TotalPoints = 0))
     
     max_round <- max(results.long$Round, na.rm = TRUE)
-    max_points <- max(results.long$TotalPoints, na.rm = TRUE)
     
     p <- ggplot(results.long, aes(x = Round, y = TotalPoints, group = Player, color = Player,
-                                  text = paste("Player:", Player, "<br>Round:", Round, "<br>Total Points:", TotalPoints))) +
+                                  text = paste("Player:", Player,
+                                               "<br>Round:", Round,
+                                               "<br>Total Points:", TotalPoints))) +
       geom_line(linewidth = 0.75) +
       geom_point(size = 1.5) +
       theme_minimal() +
@@ -947,7 +940,9 @@ server <- function(input, output, session) {
     max_position <- max(results.long$Position, na.rm = TRUE)
     
     p <- ggplot(results.long, aes(x = Round, y = Position, group = Player, color = Player, 
-                                  text = paste("Player:", Player, "<br>Round:", Round, "<br>Position:", Position))) +
+                                  text = paste("Player:", Player,
+                                               "<br>Round:", Round,
+                                               "<br>Position:", Position))) +
       geom_line(linewidth = 0.75) +
       geom_point(size = 1.5) +
       theme_minimal() +
