@@ -82,7 +82,7 @@ ui <- tagList(
   ),
   
   fluidPage(
-  
+    
     style = "background-color: #f5f5f5;",
     
     tags$head(
@@ -144,7 +144,7 @@ ui <- tagList(
                                     class = "padding-container",
                                     helpText("Season info"),
                                     reactableOutput("seasonInfoTable")
-                                    ),
+                   ),
                    
                    conditionalPanel(condition = "output.showRoundInfo == true",
                                     class = "padding-container",
@@ -410,7 +410,7 @@ server <- function(input, output, session) {
         results.filtered$Season[1],
         results.filtered$Month[1],
         results.filtered$Day[1])
-      )
+    )
     info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
                                          results.filtered$`Player 2`)))
     info.matchesPlayed = nrow(results.filtered)
@@ -758,7 +758,7 @@ server <- function(input, output, session) {
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-
+    
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
       for (j in 1:nrow(results.current)) {
@@ -784,7 +784,7 @@ server <- function(input, output, session) {
           results.current$`Matches won`[j]
       }
     }
-
+    
     results.table <- results.table %>%
       arrange(desc(Points),
               desc(`Nights won`),
@@ -792,7 +792,7 @@ server <- function(input, output, session) {
               desc(`Matches won`),
               desc(`Leg difference`),
               desc(`Legs won`))
-
+    
     results.table <- results.table %>%
       mutate("#" = as.character(row_number())) %>%
       select("#", everything())
@@ -834,49 +834,80 @@ server <- function(input, output, session) {
   }
   
   createStandingsPlot <- function(season) {
-
+    
     results.season <- results %>%
       filter(Season == season)
-
+    
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    
+    # Create a table to store cumulative points for each player
     results.table <- data.frame(
       Player = players,
-      `Round 0` = rep(0, length(players)),
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
-
+    
+    # Add Round 0 with initial points
+    results.table <- results.table %>%
+      mutate(`Round 0` = 0)  # Every player starts with 0 points at Round 0
+    
+    cumulative_points <- rep(0, length(players))
+    
     for (r in unique(results.season$`Round`)) {
-      results.current <- calculateRoundStandingsTable(season, r)
-      previous_column_name = paste("Round", as.character(as.numeric(r) - 1), sep = " ")
-      new_column_name <- paste("Round", r, sep = " ")
-      results.table[, new_column_name] <- results.table[previous_column_name]
+      round_column_name <- paste("Round", r, sep = " ")
+      results.table[, round_column_name] <- NA
+    }
+    
+    # Calculate cumulative points for each player after each round
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)  # Function to get current round results
+      round_column_name <- paste("Round", r, sep = " ")
+      
       for (j in 1:nrow(results.current)) {
-        results.table[results.table$Player == results.current$Player[j], new_column_name] <-
-          results.table[results.table$Player == results.current$Player[j], new_column_name] +
-          results.current$Points[j] + results.current$`Bonus points`[j]
+        # Calculate points for the current round
+        round_points <- results.current$Points[j] + results.current$`Bonus points`[j]
+        
+        # Update cumulative points
+        player_index <- which(results.table$Player == results.current$Player[j])
+        cumulative_points[player_index] <- cumulative_points[player_index] + round_points
+        
+        # Store cumulative points in the results table
+        results.table[player_index, round_column_name] <- cumulative_points[player_index]
       }
     }
-
+    
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
                            "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
-
+    
+    # Transform results.table to long format for plotting
     results.long <- results.table %>%
-      pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Points")
-
-    ggplot(results.long, aes(x = Round, y = Points, group = Player, color = Player)) +
+      pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "TotalPoints") %>%
+      mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
+      filter(!is.na(TotalPoints))
+    
+    # Ensure Round 0 is included
+    results.long <- results.long %>%
+      bind_rows(data.frame(Round = 0, Player = players, TotalPoints = 0))
+    
+    max_round <- max(results.long$Round, na.rm = TRUE)
+    max_points <- max(results.long$TotalPoints, na.rm = TRUE)
+    
+    p <- ggplot(results.long, aes(x = Round, y = TotalPoints, group = Player, color = Player,
+                                  text = paste("Player:", Player, "<br>Round:", Round, "<br>Total Points:", TotalPoints))) +
       geom_line(linewidth = 0.75) +
       geom_point(size = 1.5) +
       theme_minimal() +
-      labs(title = "Points over rounds",
+      labs(title = "Cumulative Total Points over Rounds",
            x = "Rounds",
-           y = "Points") +
+           y = "Total Points") +
+      scale_x_continuous(breaks = 0:max_round, limits = c(0, max_round)) +
       scale_color_manual(values = my_custom_palette) +
       theme(legend.position = "right",
             plot.title = element_text(hjust = 0.5))
+    
+    ggplotly(p, tooltip = c("text")) %>%
+      layout(hovermode = "closest")
   }
-  
-  library(plotly)
   
   createPositionsPlot <- function(season) {
     
@@ -1111,9 +1142,9 @@ server <- function(input, output, session) {
                         }
         ),
         `Bonus points` = colDef(maxWidth = 125, align = "center",
-                        style = function(value) {
-                          list(background = "#b8b8d2")
-                        }
+                                style = function(value) {
+                                  list(background = "#b8b8d2")
+                                }
         )
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
@@ -1146,7 +1177,7 @@ server <- function(input, output, session) {
                         style = function(value) {
                           list(background = "lightgrey")
                         }
-                        )
+        )
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
@@ -1167,12 +1198,12 @@ server <- function(input, output, session) {
                        style = function(value) {
                          list(background = "lightgrey")
                        }
-                       ),
+        ),
         Average = colDef(maxWidth = 75,
                          style = function(value) {
                            list(background = "#b8b8d2")
                          }
-                         )
+        )
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
