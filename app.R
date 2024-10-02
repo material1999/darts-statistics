@@ -875,6 +875,8 @@ server <- function(input, output, session) {
   #           plot.title = element_text(hjust = 0.5))
   # }
   
+  library(plotly)
+  
   createStandingsPlot <- function(season) {
     
     results.season <- results %>%
@@ -887,15 +889,18 @@ server <- function(input, output, session) {
       check.names = FALSE
     )
     
+    # Initialize columns for each round with NA (to indicate non-participation)
     for (r in unique(results.season$`Round`)) {
       round_column_name <- paste("Round", r, sep = " ")
       results.table[, round_column_name] <- NA
     }
     
+    # Update only the rounds where players participated
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
       round_column_name <- paste("Round", r, sep = " ")
       
+      # Assign positions only for players who participated in the current round
       for (j in 1:nrow(results.current)) {
         results.table[results.table$Player == results.current$Player[j], round_column_name] <- j
       }
@@ -904,26 +909,33 @@ server <- function(input, output, session) {
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
                            "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
     
+    # Pivot to long format, and filter out NA values (players who didn't participate in the round)
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Position") %>%
       mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
-      filter(!is.na(Position))
+      filter(!is.na(Position))  # Exclude non-participants from the plot
     
-    max_round <- max(results.long$Round, na.rm = TRUE)
-    max_position <- max(results.long$Position, na.rm = TRUE)
+    max_round <- max(results.long$Round, na.rm = TRUE)  # Maximum round number
+    max_position <- max(results.long$Position, na.rm = TRUE)  # Maximum position observed
     
-    ggplot(results.long, aes(x = Round, y = Position, group = Player, color = Player)) +
-      geom_line(linewidth = 0.75) +
-      geom_point(size = 1.5) +
+    # Create the ggplot object
+    p <- ggplot(results.long, aes(x = Round, y = Position, group = Player, color = Player, 
+                                  text = paste("Player:", Player, "<br>Round:", Round, "<br>Position:", Position))) +
+      geom_line(linewidth = 0.75) +   # Lines between rounds for participants
+      geom_point(size = 1.5) +        # Points for players who participated
       theme_minimal() +
       labs(title = "Positions over rounds",
            x = "Rounds",
            y = "Position") +
-      scale_x_continuous(breaks = 1:max_round, limits = c(1, max_round)) +
-      scale_y_reverse(breaks = 1:max_position, limits = c(max_position, 1)) +
+      scale_x_continuous(breaks = 1:max_round, limits = c(1, max_round)) +  # X-axis from round 1 to max
+      scale_y_reverse(breaks = 1:max_position, limits = c(max_position, 1)) +  # Dynamic Y-axis based on max observed position
       scale_color_manual(values = my_custom_palette) +
       theme(legend.position = "right",
             plot.title = element_text(hjust = 0.5))
+    
+    # Convert to plotly and customize hover behavior
+    ggplotly(p, tooltip = c("text")) %>%  # Use only the custom hover text for both lines and points
+      layout(hovermode = "closest")
   }
   
   calculateRoundMatches <- function(season, round) {
