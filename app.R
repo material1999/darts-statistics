@@ -205,6 +205,8 @@ ui <- tagList(
                                      div(class = "table-container",
                                          plotlyOutput("standingsPlot", height = "500px")),
                                      div(class = "table-container",
+                                         plotlyOutput("overallPositionsPlot", height = "500px")),
+                                     div(class = "table-container",
                                          plotlyOutput("positionsPlot", height = "500px"))),
                             tabPanel("Past seasons", value = 2,
                                      div(class = "title-container",
@@ -878,10 +880,8 @@ server <- function(input, output, session) {
       mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
       filter(!is.na(TotalPoints))
     
-    results.long <- results.long %>%
-      bind_rows(data.frame(Round = 0, Player = players, TotalPoints = 0))
-    
     max_round <- max(results.long$Round, na.rm = TRUE)
+    max_points <- max(results.long$TotalPoints, na.rm = TRUE)
     
     p <- ggplot(results.long, aes(x = Round, y = TotalPoints, group = Player, color = Player,
                                   text = paste("Player:", Player,
@@ -890,12 +890,74 @@ server <- function(input, output, session) {
       geom_line(linewidth = 0.75) +
       geom_point(size = 1.5) +
       theme_minimal() +
-      labs(title = "Cumulative Total Points over Rounds",
+      labs(title = "Total Points After Each Round",
            x = "Rounds",
            y = "Total Points") +
       scale_x_continuous(breaks = 0:max_round, limits = c(0, max_round)) +
+      scale_y_continuous(limits = c(0, max_points)) +
       scale_color_manual(values = my_custom_palette) +
       theme(legend.position = "right",
+            plot.title = element_text(hjust = 0.5))
+    
+    ggplotly(p, tooltip = c("text")) %>%
+      layout(hovermode = "closest")
+  }
+  
+  createOverallPositionsPlot <- function(season) {
+    
+    results.season <- results %>%
+      filter(Season == season)
+    
+    players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    
+    results.table <- data.frame(
+      Player = players,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    cumulative_points <- rep(0, length(players))
+    
+    overall_ranking_history <- data.frame()
+    
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)
+      
+      for (j in 1:nrow(results.current)) {
+        round_points <- results.current$Points[j] + results.current$`Bonus points`[j]
+        
+        player_index <- which(results.table$Player == results.current$Player[j])
+        cumulative_points[player_index] <- cumulative_points[player_index] + round_points
+        
+        results.table[player_index, paste("Round", r, sep = " ")] <- cumulative_points[player_index]
+      }
+      
+      current_overall_ranks <- data.frame(Player = results.table$Player,
+                                          Cumulative_Points = cumulative_points) %>%
+        arrange(desc(Cumulative_Points)) %>%
+        mutate(Overall_Rank = row_number())
+      
+      current_overall_ranks$Round <- r
+      overall_ranking_history <- rbind(overall_ranking_history, current_overall_ranks)
+    }
+    
+    my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
+                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
+    
+    p <- ggplot(overall_ranking_history, aes(x = Round, y = Overall_Rank, group = Player, color = Player, 
+                                             text = paste("Player:", Player, 
+                                                          "<br>Round:", Round, 
+                                                          "<br>Overall Ranking:", Overall_Rank))) +
+      geom_line(linewidth = 0.75) +
+      geom_point(size = 1.5) +
+      theme_minimal() +
+      labs(title = "Overall Rankings After Each Round", 
+           x = "Rounds", 
+           y = "Overall Rankings") +
+      scale_x_discrete(breaks = unique(overall_ranking_history$Round)) +
+      scale_y_reverse(breaks = 1:length(players), limits = c(length(players), 1)) +
+      scale_color_manual(values = my_custom_palette) +
+      theme(legend.position = "right", 
             plot.title = element_text(hjust = 0.5))
     
     ggplotly(p, tooltip = c("text")) %>%
@@ -942,13 +1004,13 @@ server <- function(input, output, session) {
     p <- ggplot(results.long, aes(x = Round, y = Position, group = Player, color = Player, 
                                   text = paste("Player:", Player,
                                                "<br>Round:", Round,
-                                               "<br>Position:", Position))) +
+                                               "<br>Ranking:", Position))) +
       geom_line(linewidth = 0.75) +
       geom_point(size = 1.5) +
       theme_minimal() +
-      labs(title = "Positions over rounds",
+      labs(title = "Round Rankings",
            x = "Rounds",
-           y = "Position") +
+           y = "Rankings") +
       scale_x_continuous(breaks = 1:max_round, limits = c(1, max_round)) +
       scale_y_reverse(breaks = 1:max_position, limits = c(max_position, 1)) +
       scale_color_manual(values = my_custom_palette) +
@@ -1207,6 +1269,10 @@ server <- function(input, output, session) {
   
   output$standingsPlot <- renderPlotly({
     createStandingsPlot(max(results$Season))
+  })
+  
+  output$overallPositionsPlot <- renderPlotly({
+    createOverallPositionsPlot(max(results$Season))
   })
   
   output$positionsPlot <- renderPlotly({
