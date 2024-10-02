@@ -203,7 +203,9 @@ ui <- tagList(
                                      div(class = "title-container",
                                          strong("Interactive visuals")),
                                      div(class = "table-container",
-                                         plotlyOutput("standingsPlot", height = "500px"))),
+                                         plotlyOutput("standingsPlot", height = "500px")),
+                                     div(class = "table-container",
+                                         plotlyOutput("positionsPlot", height = "500px"))),
                             tabPanel("Past seasons", value = 2,
                                      div(class = "title-container",
                                          p("Work in progress..."))),
@@ -831,53 +833,52 @@ server <- function(input, output, session) {
     
   }
   
-  # createStandingsPlot <- function(season) {
-  #   
-  #   results.season <- results %>%
-  #     filter(Season == season)
-  #   
-  #   players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
-  #   results.table <- data.frame(
-  #     Player = players,
-  #     `Round 0` = rep(0, length(players)),
-  #     stringsAsFactors = FALSE,
-  #     check.names = FALSE
-  #   )
-  #   
-  #   for (r in unique(results.season$`Round`)) {
-  #     results.current <- calculateRoundStandingsTable(season, r)
-  #     previous_column_name = paste("Round", as.character(as.numeric(r) - 1), sep = " ")
-  #     new_column_name <- paste("Round", r, sep = " ")
-  #     results.table[, new_column_name] <- results.table[previous_column_name]
-  #     for (j in 1:nrow(results.current)) {
-  #       results.table[results.table$Player == results.current$Player[j], new_column_name] <-
-  #         results.table[results.table$Player == results.current$Player[j], new_column_name] +
-  #         results.current$Points[j] + results.current$`Bonus points`[j]
-  #     }
-  #   }
-  #   
-  #   my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-  #                          "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
-  #   
-  #   results.long <- results.table %>%
-  #     pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Points")
-  #   
-  #   ggplot(results.long, aes(x = Round, y = Points, group = Player, color = Player)) +
-  #     geom_line(linewidth = 0.75) +
-  #     geom_point(size = 1.5) +
-  #     theme_minimal() +
-  #     labs(title = "Points over rounds",
-  #          x = "Rounds",
-  #          y = "Points") +
-  #     scale_color_manual(values = my_custom_palette) +
-  #     # scale_color_viridis_d() +
-  #     theme(legend.position = "right",
-  #           plot.title = element_text(hjust = 0.5))
-  # }
+  createStandingsPlot <- function(season) {
+
+    results.season <- results %>%
+      filter(Season == season)
+
+    players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    results.table <- data.frame(
+      Player = players,
+      `Round 0` = rep(0, length(players)),
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)
+      previous_column_name = paste("Round", as.character(as.numeric(r) - 1), sep = " ")
+      new_column_name <- paste("Round", r, sep = " ")
+      results.table[, new_column_name] <- results.table[previous_column_name]
+      for (j in 1:nrow(results.current)) {
+        results.table[results.table$Player == results.current$Player[j], new_column_name] <-
+          results.table[results.table$Player == results.current$Player[j], new_column_name] +
+          results.current$Points[j] + results.current$`Bonus points`[j]
+      }
+    }
+
+    my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
+                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
+
+    results.long <- results.table %>%
+      pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Points")
+
+    ggplot(results.long, aes(x = Round, y = Points, group = Player, color = Player)) +
+      geom_line(linewidth = 0.75) +
+      geom_point(size = 1.5) +
+      theme_minimal() +
+      labs(title = "Points over rounds",
+           x = "Rounds",
+           y = "Points") +
+      scale_color_manual(values = my_custom_palette) +
+      theme(legend.position = "right",
+            plot.title = element_text(hjust = 0.5))
+  }
   
   library(plotly)
   
-  createStandingsPlot <- function(season) {
+  createPositionsPlot <- function(season) {
     
     results.season <- results %>%
       filter(Season == season)
@@ -889,18 +890,15 @@ server <- function(input, output, session) {
       check.names = FALSE
     )
     
-    # Initialize columns for each round with NA (to indicate non-participation)
     for (r in unique(results.season$`Round`)) {
       round_column_name <- paste("Round", r, sep = " ")
       results.table[, round_column_name] <- NA
     }
     
-    # Update only the rounds where players participated
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
       round_column_name <- paste("Round", r, sep = " ")
       
-      # Assign positions only for players who participated in the current round
       for (j in 1:nrow(results.current)) {
         results.table[results.table$Player == results.current$Player[j], round_column_name] <- j
       }
@@ -909,32 +907,29 @@ server <- function(input, output, session) {
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
                            "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
     
-    # Pivot to long format, and filter out NA values (players who didn't participate in the round)
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Position") %>%
       mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
-      filter(!is.na(Position))  # Exclude non-participants from the plot
+      filter(!is.na(Position))
     
-    max_round <- max(results.long$Round, na.rm = TRUE)  # Maximum round number
-    max_position <- max(results.long$Position, na.rm = TRUE)  # Maximum position observed
+    max_round <- max(results.long$Round, na.rm = TRUE)
+    max_position <- max(results.long$Position, na.rm = TRUE)
     
-    # Create the ggplot object
     p <- ggplot(results.long, aes(x = Round, y = Position, group = Player, color = Player, 
                                   text = paste("Player:", Player, "<br>Round:", Round, "<br>Position:", Position))) +
-      geom_line(linewidth = 0.75) +   # Lines between rounds for participants
-      geom_point(size = 1.5) +        # Points for players who participated
+      geom_line(linewidth = 0.75) +
+      geom_point(size = 1.5) +
       theme_minimal() +
       labs(title = "Positions over rounds",
            x = "Rounds",
            y = "Position") +
-      scale_x_continuous(breaks = 1:max_round, limits = c(1, max_round)) +  # X-axis from round 1 to max
-      scale_y_reverse(breaks = 1:max_position, limits = c(max_position, 1)) +  # Dynamic Y-axis based on max observed position
+      scale_x_continuous(breaks = 1:max_round, limits = c(1, max_round)) +
+      scale_y_reverse(breaks = 1:max_position, limits = c(max_position, 1)) +
       scale_color_manual(values = my_custom_palette) +
       theme(legend.position = "right",
             plot.title = element_text(hjust = 0.5))
     
-    # Convert to plotly and customize hover behavior
-    ggplotly(p, tooltip = c("text")) %>%  # Use only the custom hover text for both lines and points
+    ggplotly(p, tooltip = c("text")) %>%
       layout(hovermode = "closest")
   }
   
@@ -1186,6 +1181,10 @@ server <- function(input, output, session) {
   
   output$standingsPlot <- renderPlotly({
     createStandingsPlot(max(results$Season))
+  })
+  
+  output$positionsPlot <- renderPlotly({
+    createPositionsPlot(max(results$Season))
   })
   
   output$roundMatches <- renderReactable({
