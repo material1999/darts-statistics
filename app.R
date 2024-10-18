@@ -277,6 +277,9 @@ ui <- tagList(
                                                   div(class = "bio", uiOutput("bio_nickname")),
                                                   strong(class = "bio", "Walk-On Music"),
                                                   div(class = "bio", uiOutput("bio_walkon")),
+                                                  div(uiOutput("bio_walkon_audio"),
+                                                      style = "padding-top: 20px;"
+                                                      ),
                                                   strong(class = "bio", "Darts Used"),
                                                   div(class = "bio", uiOutput("bio_darts")),
                                                   strong(class = "bio", "Date of Birth"),
@@ -329,6 +332,15 @@ server <- function(input, output, session) {
   
   output$bio_walkon <- renderUI({
     bio[bio$`Player` == input$player, ]$`Walk-On Music`
+  })
+  
+  output$bio_walkon_audio <- renderUI({
+    audio_file <- paste0(bio[bio$`Player` == input$player, ]$`Walk-On Music`, ".mp3")
+    tags$audio(
+      src = audio_file,
+      type = "audio/mp3",
+      controls = NA
+    )
   })
   
   output$bio_darts <- renderUI({
