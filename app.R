@@ -51,11 +51,11 @@ for (filename in filenames) {
 
 results <- results[, c(1,2,4,5,3,6,7,8,9)]
 
-filenames <- list.files(path = "./bonus", pattern = "*.xlsx", full.names = TRUE)
+filename <- "./bonus/bonus_points.xlsx"
+bonus = read_excel(filename)
 
-for (filename in filenames) {
-  bonus = read_excel(filename)
-}
+filename <- "./bio/player_bio.xlsx"
+bio = read_excel(filename)
 
 rm(filenames)
 rm(filename)
@@ -130,6 +130,9 @@ ui <- tagList(
       .title-panel {
         font-size: 1.3em;
         padding-bottom: 20px;
+      }
+      .bio {
+        font-size: 0.5em;
       }
     ")),
     
@@ -261,20 +264,34 @@ ui <- tagList(
                                        style = "padding-left: 10px; padding-right: 10px;",
                                        column(4,
                                               div(class = "subtitle-container",
-                                                  style = "padding-bottom: 10px;",
-                                                  uiOutput("player_name")),
-                                              uiOutput("player_image",
-                                                       style = "padding-top: 10px;")
+                                                  style = "padding-bottom: 20px;",
+                                                  uiOutput("player_name")
+                                                  ),
+                                              uiOutput("player_image")
                                        ),
-                                       column(2,
+                                       column(3,
                                               div(class = "subtitle-container",
-                                                  style = "padding-bottom: 10px;",
-                                                  strong("Bio"))
+                                                  style = "padding-bottom: 20px;",
+                                                  div(strong("Bio")),
+                                                  strong(class = "bio", "Nickname"),
+                                                  div(class = "bio", uiOutput("bio_nickname")),
+                                                  strong(class = "bio", "Walk-On Music"),
+                                                  div(class = "bio", uiOutput("bio_walkon")),
+                                                  strong(class = "bio", "Darts Used"),
+                                                  div(class = "bio", uiOutput("bio_darts")),
+                                                  strong(class = "bio", "Date of Birth"),
+                                                  div(class = "bio", uiOutput("bio_birth")),
+                                                  strong(class = "bio", "Hometown"),
+                                                  div(class = "bio", uiOutput("bio_hometown")),
+                                                  strong(class = "bio", "Career 180s"),
+                                                  div(class = "bio", uiOutput("bio_oneeighty"))
+                                                  )
                                        ),
-                                       column(6,
+                                       column(5,
                                               div(class = "subtitle-container",
-                                                  style = "padding-bottom: 10px;",
-                                                  strong("Stats"))
+                                                  style = "padding-bottom: 20px;",
+                                                  div(strong("Stats"))
+                                                  )
                                        )
                                      ))
                 )
@@ -304,6 +321,30 @@ server <- function(input, output, session) {
   
   output$player_name <- renderUI({
     strong(input$player)
+  })
+  
+  output$bio_nickname <- renderUI({
+    bio[bio$`Player` == input$player, ]$`Nickname`
+  })
+  
+  output$bio_walkon <- renderUI({
+    bio[bio$`Player` == input$player, ]$`Walk-On Music`
+  })
+  
+  output$bio_darts <- renderUI({
+    bio[bio$`Player` == input$player, ]$`Darts Used`
+  })
+  
+  output$bio_birth <- renderUI({
+    bio[bio$`Player` == input$player, ]$`Date of Birth`
+  })
+  
+  output$bio_hometown <- renderUI({
+    bio[bio$`Player` == input$player, ]$`Hometown`
+  })
+  
+  output$bio_oneeighty <- renderUI({
+    bio[bio$`Player` == input$player, ]$`Career 180s`
   })
   
   output$player_image <- renderUI({
