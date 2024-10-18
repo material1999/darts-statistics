@@ -335,7 +335,7 @@ server <- function(input, output, session) {
   })
   
   output$bio_walkon_audio <- renderUI({
-    audio_file <- paste0(bio[bio$`Player` == input$player, ]$`Walk-On Music`, ".mp3")
+    audio_file <- paste0("walk-on/", bio[bio$`Player` == input$player, ]$`Walk-On Music`, ".mp3")
     tags$audio(
       src = audio_file,
       type = "audio/mp3",
@@ -362,7 +362,8 @@ server <- function(input, output, session) {
   output$player_image <- renderUI({
     tags$figure(
       tags$img(
-        src = stri_trans_general(tolower(input$player), "Latin-ASCII") %>%
+        src = "avatar/" %>%
+          paste0(stri_trans_general(tolower(input$player), "Latin-ASCII")) %>%
           gsub(" ", "_", .) %>%
           paste0(".jpg"),
         width = 250,
