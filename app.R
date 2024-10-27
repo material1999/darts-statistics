@@ -342,7 +342,7 @@ server <- function(input, output, session) {
     tags$audio(
       src = audio_file,
       type = "audio/mp3",
-      controls = NA
+      controls = "controls"
     )
   })
   
