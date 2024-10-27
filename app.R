@@ -335,7 +335,10 @@ server <- function(input, output, session) {
   })
   
   output$bio_walkon_audio <- renderUI({
-    audio_file <- paste0("walk-on/", bio[bio$`Player` == input$player, ]$`Walk-On Music`, ".mp3")
+    audio_file <- paste0("walk-on/",
+                         stri_trans_general(bio[bio$`Player` == input$player, ]$`Walk-On Music`,
+                                            "Latin-ASCII"),
+                         ".mp3")
     tags$audio(
       src = audio_file,
       type = "audio/mp3",
