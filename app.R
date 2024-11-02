@@ -2,7 +2,7 @@
 
 # install.packages(c("tidyverse", "ggplot2", "shiny", "gridExtra", "plotly",
 #                    "treemapify", "readxl", "shinydashboard", "DT", "reactable",
-#                    "bslib", "stringi"))
+#                    "bslib", "stringi", "howler"))
 
 library(tidyverse)
 library(ggplot2)
@@ -16,6 +16,7 @@ library(DT)
 library(reactable)
 library(bslib)
 library(stringi)
+library(howler)
 
 # Load data --------------------------------------------------------------------
 
@@ -23,6 +24,8 @@ library(stringi)
 
 results <- data.frame()
 filenames <- list.files(path = "./results", pattern = "*.xlsx", full.names = TRUE)
+walkon_all <- sub("^\\.\\/www\\/", "",
+                  list.files(path = "./www/walk-on", pattern = "*.mp3", full.names = TRUE))
 
 for (filename in filenames) {
   
@@ -267,7 +270,16 @@ ui <- tagList(
                                                   style = "padding-bottom: 20px;",
                                                   uiOutput("player_name")
                                                   ),
-                                              uiOutput("player_image")
+                                              uiOutput("player_image"),
+                                              div(
+                                                howlerModuleUI(
+                                                  id = "walkon",
+                                                  files = walkon_all,
+                                                  # options = list(loop = "true")
+                                                  options = list(onend = "function() {stop();}")
+                                                ),
+                                                style = "padding-top: 10px;"
+                                              ),
                                        ),
                                        column(3,
                                               div(class = "subtitle-container",
@@ -277,9 +289,6 @@ ui <- tagList(
                                                   div(class = "bio", uiOutput("bio_nickname")),
                                                   strong(class = "bio", "Walk-On Music"),
                                                   div(class = "bio", uiOutput("bio_walkon")),
-                                                  div(uiOutput("bio_walkon_audio"),
-                                                      style = "padding-top: 20px;"
-                                                      ),
                                                   strong(class = "bio", "Darts Used"),
                                                   div(class = "bio", uiOutput("bio_darts")),
                                                   strong(class = "bio", "Date of Birth"),
@@ -334,16 +343,13 @@ server <- function(input, output, session) {
     bio[bio$`Player` == input$player, ]$`Walk-On Music`
   })
   
-  output$bio_walkon_audio <- renderUI({
-    audio_file <- paste0("walk-on/",
-                         stri_trans_general(bio[bio$`Player` == input$player, ]$`Walk-On Music`,
-                                            "Latin-ASCII"),
-                         ".mp3")
-    tags$audio(
-      src = audio_file,
-      type = "audio/mp3",
-      controls = "controls"
+  observeEvent(input$player, {
+    audio_file <- paste0(
+      stri_trans_general(bio[bio$`Player` == input$player, ]$`Walk-On Music`, "Latin-ASCII"),
+      ".mp3"
     )
+    changeTrack("walkon-howler", audio_file)
+    stopHowl("walkon-howler")
   })
   
   output$bio_darts <- renderUI({
@@ -369,7 +375,7 @@ server <- function(input, output, session) {
           paste0(stri_trans_general(tolower(input$player), "Latin-ASCII")) %>%
           gsub(" ", "_", .) %>%
           paste0(".jpg"),
-        width = 250,
+        width = 300,
         alt = "No image found..."
       )
     )
