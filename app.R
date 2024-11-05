@@ -2,7 +2,7 @@
 
 # install.packages(c("tidyverse", "ggplot2", "shiny", "gridExtra", "plotly",
 #                    "treemapify", "readxl", "shinydashboard", "DT", "reactable",
-#                    "bslib", "stringi", "howler"))
+#                    "bslib", "stringi", "howler", "shinyBS"))
 
 library(tidyverse)
 library(ggplot2)
@@ -17,6 +17,7 @@ library(reactable)
 library(bslib)
 library(stringi)
 library(howler)
+library(shinyBS)
 
 # Load data --------------------------------------------------------------------
 
@@ -59,6 +60,12 @@ bonus = read_excel(filename)
 
 filename <- "./bio/player_bio.xlsx"
 bio = read_excel(filename)
+
+gallery_files <- list.files(path = "./www/gallery", full.names = TRUE)
+gallery_files <- lapply(gallery_files, function(x) substring(x, 6))
+# descriptions <- rep("info", length(gallery_files))
+descriptions <- readLines("./www/gallery_info.txt")
+image_info <- setNames(gallery_files, descriptions)
 
 rm(filenames)
 rm(filename)
@@ -136,6 +143,13 @@ ui <- tagList(
       }
       .bio {
         font-size: 0.5em;
+      }
+      .square-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+        cursor: pointer;
       }
     ")),
     
@@ -275,7 +289,6 @@ ui <- tagList(
                                                 howlerModuleUI(
                                                   id = "walkon",
                                                   files = walkon_all,
-                                                  # options = list(loop = "true")
                                                   options = list(onend = "function() {stop();}")
                                                 ),
                                                 style = "padding-top: 10px;"
@@ -305,7 +318,27 @@ ui <- tagList(
                                                   div(strong("Stats"))
                                                   )
                                        )
-                                     ))
+                                     )),
+                            tabPanel("Gallery", value = 7,
+                                     div(class = "title-container",
+                                         strong("2024")),
+                                     fluidRow(
+                                       style = "padding-top: 20px;",
+                                       lapply(seq_along(image_info), function(i) {
+                                         column(
+                                           width = 4,
+                                           div(
+                                             img(src = image_info[[i]], width = "100%",
+                                                 class = "square-image",
+                                                 title = names(image_info)[i],
+                                                 onclick = paste0("$('#modal", i, "').modal('show')")),
+                                             style = "padding-bottom: 35px;"
+                                           )
+                                         )
+                                       })
+                                     ),
+                                     uiOutput("modals")
+                                     )
                 )
       )
     )
@@ -316,6 +349,13 @@ ui <- tagList(
 # Define server ----------------------------------------------------------------
 
 server <- function(input, output, session) {
+  
+  output$modals <- renderUI({
+    lapply(seq_along(image_info), function(i) {
+      bsModal(paste0("modal", i), names(image_info)[i], "", size = "medium",
+              img(src = image_info[[i]], width = "100%"))
+    })
+  })
   
   observe({
     selected <- input$player
