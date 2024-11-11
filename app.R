@@ -366,7 +366,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$season, {
     selected_season <- input$season
-    round_choices <- sort(unique(results$Round[results$Season == selected_season]))
+    round_choices <- sort(as.numeric(unique(results$Round[results$Season == selected_season])))
     max_round <- max(round_choices)
     updateSelectInput(session, "round", choices = round_choices, selected = max_round)
   })
