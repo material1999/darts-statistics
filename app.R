@@ -62,8 +62,7 @@ filename <- "./bio/player_bio.xlsx"
 bio = read_excel(filename)
 
 gallery_files <- list.files(path = "./www/gallery", full.names = TRUE)
-gallery_files <- lapply(gallery_files, function(x) substring(x, 6))
-# descriptions <- rep("info", length(gallery_files))
+gallery_files <- lapply(gallery_files, function(x) substring(x, 7))
 descriptions <- readLines("./www/gallery_info.txt")
 image_info <- setNames(gallery_files, descriptions)
 
@@ -71,6 +70,8 @@ rm(filenames)
 rm(filename)
 rm(numbers)
 rm(results.current)
+rm(descriptions)
+rm(gallery_files)
 
 # Define UI --------------------------------------------------------------------
 
@@ -353,7 +354,7 @@ server <- function(input, output, session) {
   output$modals <- renderUI({
     lapply(seq_along(image_info), function(i) {
       bsModal(paste0("modal", i), names(image_info)[i], "", size = "medium",
-              img(src = image_info[[i]], width = "100%"))
+              img(src = image_info[[i]], width = "100%", alt = "No image found..."))
     })
   })
   
