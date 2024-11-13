@@ -343,11 +343,11 @@ ui <- tagList(
                             tabPanel("Videos", value = 8,
                                      div(class = "title-container",
                                          strong("2024 - Round 2 - Berci vs. Máté")),
-                                     div(HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/HAATwl3KCmk?si=MuQyE2TNWT2s1MEa" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
+                                     div(HTML('<iframe width="784" height="441" src="https://www.youtube.com/embed/HAATwl3KCmk?si=MuQyE2TNWT2s1MEa" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
                                          style = "padding-top: 10px; padding-bottom: 35px;"),
                                      div(class = "title-container",
                                          strong("2024 - Round 1 - Berci vs. Dáni")),
-                                     div(HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/SD9acHdD-mk?si=C6mJ8G6qb3NrFJVX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
+                                     div(HTML('<iframe width="784" height="441" src="https://www.youtube.com/embed/SD9acHdD-mk?si=C6mJ8G6qb3NrFJVX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
                                          style = "padding-top: 10px; padding-bottom: 35px;")
                                      
                                      )
@@ -1362,7 +1362,7 @@ server <- function(input, output, session) {
       defaultPageSize = 15,
       defaultColDef = colDef(
         align = "center",
-        maxWidth = 75
+        maxWidth = 60
       ),
       columns = list(
         Player = colDef(minWidth = 150, maxWidth = 1500, align = "left"),
