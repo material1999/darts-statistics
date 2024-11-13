@@ -61,9 +61,9 @@ bonus = read_excel(filename)
 filename <- "./bio/player_bio.xlsx"
 bio = read_excel(filename)
 
-gallery_files <- list.files(path = "./www/gallery", full.names = TRUE)
+gallery_files <- rev(list.files(path = "./www/gallery", full.names = TRUE))
 gallery_files <- lapply(gallery_files, function(x) substring(x, 7))
-descriptions <- readLines("./www/gallery_info.txt")
+descriptions <- rev(readLines("./www/gallery_info.txt"))
 image_info <- setNames(gallery_files, descriptions)
 
 rm(filenames)
@@ -339,6 +339,17 @@ ui <- tagList(
                                        })
                                      ),
                                      uiOutput("modals")
+                                     ),
+                            tabPanel("Videos", value = 8,
+                                     div(class = "title-container",
+                                         strong("2024 - Round 2 - Berci vs. Máté")),
+                                     div(HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/HAATwl3KCmk?si=MuQyE2TNWT2s1MEa" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
+                                         style = "padding-top: 10px; padding-bottom: 35px;"),
+                                     div(class = "title-container",
+                                         strong("2024 - Round 1 - Berci vs. Dáni")),
+                                     div(HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/SD9acHdD-mk?si=C6mJ8G6qb3NrFJVX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
+                                         style = "padding-top: 10px; padding-bottom: 35px;")
+                                     
                                      )
                 )
       )
