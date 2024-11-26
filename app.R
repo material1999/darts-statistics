@@ -342,11 +342,11 @@ ui <- tagList(
                                      ),
                             tabPanel("Videos", value = 8,
                                      div(class = "title-container",
-                                         strong("2024 - Round 2 - Berci vs. Máté")),
+                                         strong("2024 - Round 2 Final - Berci vs. Máté")),
                                      div(HTML('<iframe width="784" height="441" src="https://www.youtube.com/embed/HAATwl3KCmk?si=MuQyE2TNWT2s1MEa" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
                                          style = "padding-top: 10px; padding-bottom: 35px;"),
                                      div(class = "title-container",
-                                         strong("2024 - Round 1 - Berci vs. Dáni")),
+                                         strong("2024 - Round 1 Final - Berci vs. Dáni")),
                                      div(HTML('<iframe width="784" height="441" src="https://www.youtube.com/embed/SD9acHdD-mk?si=C6mJ8G6qb3NrFJVX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
                                          style = "padding-top: 10px; padding-bottom: 35px;")
                                      
@@ -1059,6 +1059,8 @@ server <- function(input, output, session) {
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
                            "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
     
+    overall_ranking_history$Round <- as.numeric(overall_ranking_history$Round)
+    
     p <- ggplot(overall_ranking_history, aes(x = Round, y = Overall_Rank, group = Player, color = Player, 
                                              text = paste("Player:", Player, 
                                                           "<br>Round:", Round, 
@@ -1069,7 +1071,7 @@ server <- function(input, output, session) {
       labs(title = "Overall Rankings After Each Round", 
            x = "Rounds", 
            y = "Overall Rankings") +
-      scale_x_discrete(breaks = unique(overall_ranking_history$Round)) +
+      scale_x_continuous(breaks = unique(overall_ranking_history$Round)) +
       scale_y_reverse(breaks = 1:length(players), limits = c(length(players), 1)) +
       scale_color_manual(values = my_custom_palette) +
       theme(legend.position = "right", 
