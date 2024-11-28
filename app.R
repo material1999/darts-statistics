@@ -973,10 +973,10 @@ server <- function(input, output, session) {
     for (r in unique(results.season$`Round`)) {
       results.current <- calculateRoundStandingsTable(season, r)
       new_column_name <- paste("R", as.character(r), sep = "")
-      results.table[, new_column_name] <- rep(0, length(players))
+      results.table[, new_column_name] <- NA # Initialize with NA
+      
       for (j in 1:nrow(results.current)) {
-        results.table[results.table$Player == results.current$Player[j], new_column_name] <-
-          results.table[results.table$Player == results.current$Player[j], new_column_name] +
+        results.table[results.table$Player == results.current$Player[j], new_column_name] <- 
           results.current$Points[j] + results.current$`Bonus points`[j]
       }
     }
@@ -988,7 +988,6 @@ server <- function(input, output, session) {
       arrange(desc(Total))
     
     return(results.table)
-    
   }
   
   createStandingsPlot <- function(season) {
