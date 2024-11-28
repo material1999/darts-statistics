@@ -867,6 +867,7 @@ server <- function(input, output, session) {
     results.table <- data.frame(
       Player = players,
       `Nights won` = rep(0, length(players)),
+      `Finals` = rep(0, length(players)),
       `Top-4 finishes` = rep(0, length(players)),
       `Matches won` = rep(0, length(players)),
       `Leg difference` = rep(0, length(players)),
@@ -882,6 +883,10 @@ server <- function(input, output, session) {
         if (j == 1) {
           results.table[results.table$Player == results.current$Player[j], "Nights won"] <-
             results.table[results.table$Player == results.current$Player[j], "Nights won"] + 1
+        }
+        if (j <= 2) {
+          results.table[results.table$Player == results.current$Player[j], "Finals"] <-
+            results.table[results.table$Player == results.current$Player[j], "Finals"] + 1
         }
         if (j <= 4) {
           results.table[results.table$Player == results.current$Player[j], "Top-4 finishes"] <-
@@ -905,6 +910,7 @@ server <- function(input, output, session) {
     results.table <- results.table %>%
       arrange(desc(Points),
               desc(`Nights won`),
+              desc(`Finals`),
               desc(`Top-4 finishes`),
               desc(`Matches won`),
               desc(`Leg difference`),
@@ -1167,7 +1173,7 @@ server <- function(input, output, session) {
   
   output$roundTable <- renderReactable({
     reactable(
-      calculateRoundTable(input$season, input$round),
+      temp <- calculateRoundTable(input$season, input$round),
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Player = colDef(minWidth = 275),
@@ -1189,9 +1195,14 @@ server <- function(input, output, session) {
   
   output$semiFinalTable  <- renderReactable({
     reactable(
-      calculateSemiFinalTable(input$season, input$round),
+      temp <- calculateSemiFinalTable(input$season, input$round),
       columns = list(
-        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 1"] > temp[index, "Legs 2"]) {
+                                list(fontWeight = "bold")
+                              }
+                            }),
         `Legs 1` = colDef(minWidth = 50, align = "center",
                           style = function(value) {
                             list(background = "lightgrey")
@@ -1200,7 +1211,12 @@ server <- function(input, output, session) {
                           style = function(value) {
                             list(background = "lightgrey")
                           }),
-        `Player 2` = colDef(minWidth = 100, align = "center")
+        `Player 2` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 2"] > temp[index, "Legs 1"]) {
+                                list(fontWeight = "bold")
+                              }
+                            })
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
@@ -1209,9 +1225,14 @@ server <- function(input, output, session) {
   
   output$finalTable  <- renderReactable({
     reactable(
-      calculateFinalTable(input$season, input$round),
+      temp <- calculateFinalTable(input$season, input$round),
       columns = list(
-        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 1"] > temp[index, "Legs 2"]) {
+                                list(fontWeight = "bold")
+                              }
+                            }),
         `Legs 1` = colDef(minWidth = 50, align = "center",
                           style = function(value) {
                             list(background = "lightgrey")
@@ -1220,7 +1241,12 @@ server <- function(input, output, session) {
                           style = function(value) {
                             list(background = "lightgrey")
                           }),
-        `Player 2` = colDef(minWidth = 100, align = "center")
+        `Player 2` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 2"] > temp[index, "Legs 1"]) {
+                                list(fontWeight = "bold")
+                              }
+                            })
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
@@ -1229,9 +1255,14 @@ server <- function(input, output, session) {
   
   output$bronzeTable  <- renderReactable({
     reactable(
-      calculateBronzeTable(input$season, input$round),
+      temp <- calculateBronzeTable(input$season, input$round),
       columns = list(
-        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 1"] > temp[index, "Legs 2"]) {
+                                list(fontWeight = "bold")
+                              }
+                            }),
         `Legs 1` = colDef(minWidth = 50, align = "center",
                           style = function(value) {
                             list(background = "lightgrey")
@@ -1240,7 +1271,12 @@ server <- function(input, output, session) {
                           style = function(value) {
                             list(background = "lightgrey")
                           }),
-        `Player 2` = colDef(minWidth = 100, align = "center")
+        `Player 2` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 2"] > temp[index, "Legs 1"]) {
+                                list(fontWeight = "bold")
+                              }
+                            })
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
       borderless = TRUE
@@ -1341,8 +1377,9 @@ server <- function(input, output, session) {
       },
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
-        Player = colDef(minWidth = 275),
+        Player = colDef(minWidth = 200),
         `Nights won` = colDef(minWidth = 100, align = "center"),
+        `Finals` = colDef(minWidth = 100, align = "center"),
         `Top-4 finishes` = colDef(minWidth = 125, align = "center"),
         `Matches won` = colDef(minWidth = 125, align = "center"),
         `Leg difference` = colDef(minWidth = 125, align = "center"),
@@ -1398,11 +1435,16 @@ server <- function(input, output, session) {
   
   output$roundMatches <- renderReactable({
     reactable(
-      calculateRoundMatches(input$season, input$round),
+      temp <- calculateRoundMatches(input$season, input$round),
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Phase = colDef(minWidth = 100),
-        `Player 1` = colDef(minWidth = 100, align = "center"),
+        `Player 1` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 1"] > temp[index, "Legs 2"]) {
+                                list(fontWeight = "bold")
+                              }
+                            }),
         `Legs 1` = colDef(minWidth = 75, align = "center",
                           style = function(value) {
                             list(background = "lightgrey")
@@ -1411,7 +1453,12 @@ server <- function(input, output, session) {
                           style = function(value) {
                             list(background = "lightgrey")
                           }),
-        `Player 2` = colDef(minWidth = 100, align = "center"),
+        `Player 2` = colDef(minWidth = 100, align = "center",
+                            style = function(value, index) {
+                              if (temp[index, "Legs 2"] > temp[index, "Legs 1"]) {
+                                list(fontWeight = "bold")
+                              }
+                            }),
         Round = colDef(maxWidth = 75, align = "center"),
         Season = colDef(maxWidth = 75, align = "center"),
         Month = colDef(maxWidth = 75, align = "center"),
