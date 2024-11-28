@@ -218,6 +218,10 @@ ui <- tagList(
                                      div(class = "table-container",
                                          reactableOutput("standingsTable")),
                                      div(class = "title-container",
+                                         strong("Positions per round")),
+                                     div(class = "table-container",
+                                         reactableOutput("positionsPerRoundTable")),
+                                     div(class = "title-container",
                                          strong("Points per round")),
                                      div(class = "table-container",
                                          reactableOutput("pointsPerRoundTable")),
@@ -923,6 +927,37 @@ server <- function(input, output, session) {
     return(results.table)
   }
   
+  calculatePositionsPerRoundTable <- function(season) {
+    
+    results.season <- results %>%
+      filter(Season == season)
+    
+    players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    results.table <- data.frame(
+      Player = players,
+      stringsAsFactors = FALSE,
+      check.names = FALSE
+    )
+    
+    for (r in unique(results.season$`Round`)) {
+      results.current <- calculateRoundStandingsTable(season, r)
+      new_column_name <- paste("R", as.character(r), sep = "")
+      results.table[, new_column_name] <- rep(NA, length(players))
+      for (j in 1:nrow(results.current)) {
+        position <- j
+        results.table[results.table$Player == results.current$Player[j], new_column_name] <- position
+      }
+    }
+    
+    results.table <- results.table %>%
+      rowwise() %>%
+      mutate(AveragePosition = round(mean(c_across(starts_with("R")), na.rm = TRUE), 2)) %>%
+      arrange(AveragePosition)
+    
+    return(results.table)
+    
+  }
+  
   calculatePointsPerRoundTable <- function(season) {
     
     results.season <- results %>%
@@ -1395,6 +1430,28 @@ server <- function(input, output, session) {
     )
   })
   
+  output$positionsPerRoundTable <- renderReactable({
+    reactable(
+      calculatePositionsPerRoundTable(max(results$Season)),
+      defaultPageSize = 15,
+      defaultColDef = colDef(
+        align = "center",
+        maxWidth = 60
+      ),
+      columns = list(
+        Player = colDef(minWidth = 150, maxWidth = 1500, align = "left"),
+        AveragePosition = colDef(maxWidth = 75,
+                                 name = "Avg",
+                                 style = function(value) {
+                                   list(background = "#b8b8d2")
+                                 }
+        )
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE
+    )
+  })
+  
   output$pointsPerRoundTable <- renderReactable({
     reactable(
       calculatePointsPerRoundTable(max(results$Season)),
@@ -1411,6 +1468,7 @@ server <- function(input, output, session) {
                        }
         ),
         Average = colDef(maxWidth = 75,
+                         name = "Avg",
                          style = function(value) {
                            list(background = "#b8b8d2")
                          }
