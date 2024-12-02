@@ -722,10 +722,10 @@ server <- function(input, output, session) {
     )
     
     if (results.final$`Legs 1` > results.final$`Legs 2`) {
-      results.table[results.table$Player == results.final$`Player 1`, "Points"] <- 8
+      results.table[results.table$Player == results.final$`Player 1`, "Points"] <- 10
       results.table[results.table$Player == results.final$`Player 2`, "Points"] <- 6
     } else {
-      results.table[results.table$Player == results.final$`Player 2`, "Points"] <- 8
+      results.table[results.table$Player == results.final$`Player 2`, "Points"] <- 10
       results.table[results.table$Player == results.final$`Player 1`, "Points"] <- 6
     }
     
