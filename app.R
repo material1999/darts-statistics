@@ -469,30 +469,61 @@ server <- function(input, output, session) {
   
   calculateSeasonInfo <- function(season) {
     
-    results.filtered = filter(results, Season == season)
-    bonus.filtered = filter(bonus, Season == max(bonus$Season))
+    results.filtered <- filter(results, Season == season)
+    bonus.filtered <- filter(bonus, Season == season)
     
-    info.year = results.filtered$Season[1]
-    info.rounds = max(as.numeric(results.filtered$Round))
-    info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
-                                         results.filtered$`Player 2`)))
+    info.year <- results.filtered$Season[1]
+    info.rounds <- max(as.numeric(results.filtered$Round))
+    info.uniquePlayers <- length(unique(c(results.filtered$`Player 1`,
+                                          results.filtered$`Player 2`)))
     
-    winner1 = results.filtered %>%
-      filter(Phase == "Final",`Legs 1` > `Legs 2`) %>%
+    winner1 <- results.filtered %>%
+      filter(Phase == "Final", `Legs 1` > `Legs 2`) %>%
       select(`Player 1`)
     colnames(winner1) <- c("Player")
-    winner2 = results.filtered %>%
-      filter(Phase == "Final",`Legs 2` > `Legs 1`) %>%
+    winner2 <- results.filtered %>%
+      filter(Phase == "Final", `Legs 2` > `Legs 1`) %>%
       select(`Player 2`)
     colnames(winner2) <- c("Player")
-    info.uniqueWinners = nrow(unique(rbind(winner1, winner2)))
+    info.uniqueWinners <- nrow(unique(rbind(winner1, winner2)))
     
-    info.matchesPlayed = nrow(results.filtered)
-    info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
-                                       results.filtered$`Legs 2`)))
-    info.highestCheckout = max(0, as.numeric(unlist(subset(bonus.filtered,
-                                                           as.numeric(Bonus) < 180)$Bonus)))
-    info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
+    info.matchesPlayed <- nrow(results.filtered)
+    info.legsPlayed <- sum(as.numeric(c(results.filtered$`Legs 1`,
+                                        results.filtered$`Legs 2`)))
+    
+    # Calculate highest checkout
+    validBonuses <- as.numeric(bonus.filtered$Bonus)
+    validBonuses <- validBonuses[validBonuses <= 170]
+    
+    if (length(validBonuses) > 0) {
+      highestBonus <- max(validBonuses, na.rm = TRUE)
+      highestCheckoutRow <- subset(bonus.filtered, as.numeric(Bonus) == highestBonus)
+      
+      if (nrow(highestCheckoutRow) > 0) {
+        playerFirstName <- strsplit(highestCheckoutRow$Player[1], " ")[[1]][1]
+        info.highestCheckout <- paste0(as.numeric(highestCheckoutRow$Bonus[1]), " (", playerFirstName, ")")
+      } else {
+        info.highestCheckout <- "No checkout"
+      }
+    } else {
+      info.highestCheckout <- "No checkout"
+    }
+    
+    # Calculate 180s
+    playersWith180s <- bonus.filtered %>%
+      filter(as.numeric(Bonus) == 180) %>%
+      pull(Player) %>%
+      sapply(function(x) strsplit(x, " ")[[1]][1])
+    
+    if (length(playersWith180s) > 0) {
+      player180Counts <- table(playersWith180s)
+      info.180s <- paste(
+        paste(player180Counts, " (", names(player180Counts), ")", sep = ""),
+        collapse = ", "
+      )
+    } else {
+      info.180s <- "0"
+    }
     
     info.table <- data.frame(
       RowHeader = c(
@@ -522,24 +553,57 @@ server <- function(input, output, session) {
   
   calculateRoundInfo <- function(season, round) {
     
-    results.filtered = filter(results, Season == season, Round == round)
-    bonus.filtered = filter(bonus, Season == season, Round == round)
+    results.filtered <- filter(results, Season == season, Round == round)
+    bonus.filtered <- filter(bonus, Season == season, Round == round)
     
-    info.date = as.character(
+    info.date <- as.character(
       paste(
         sep = "-",
         results.filtered$Season[1],
         results.filtered$Month[1],
         results.filtered$Day[1])
     )
-    info.uniquePlayers = length(unique(c(results.filtered$`Player 1`,
-                                         results.filtered$`Player 2`)))
-    info.matchesPlayed = nrow(results.filtered)
-    info.legsPlayed = sum(as.numeric(c(results.filtered$`Legs 1`,
-                                       results.filtered$`Legs 2`)))
+    info.uniquePlayers <- length(unique(c(results.filtered$`Player 1`,
+                                          results.filtered$`Player 2`)))
+    info.matchesPlayed <- nrow(results.filtered)
+    info.legsPlayed <- sum(as.numeric(c(results.filtered$`Legs 1`,
+                                        results.filtered$`Legs 2`)))
     
-    info.highestCheckout = max(0, subset(bonus.filtered, as.numeric(Bonus) < 180)$Bonus)
-    info.180s = length(which(as.numeric(bonus.filtered$Bonus) == 180))
+    if (nrow(bonus.filtered) > 0 && any(!is.na(as.numeric(bonus.filtered$Bonus)))) {
+      validBonuses <- as.numeric(bonus.filtered$Bonus)
+      validBonuses <- validBonuses[validBonuses <= 170]
+      
+      if (length(validBonuses) > 0) {
+        highestBonus <- max(validBonuses, na.rm = TRUE)
+        highestCheckoutRow <- subset(bonus.filtered, as.numeric(Bonus) == highestBonus)
+        
+        if (nrow(highestCheckoutRow) > 0) {
+          playerFirstName <- strsplit(highestCheckoutRow$Player[1], " ")[[1]][1]
+          info.highestCheckout <- paste0(as.numeric(highestCheckoutRow$Bonus[1]), " (", playerFirstName, ")")
+        } else {
+          info.highestCheckout <- "No checkout"
+        }
+      } else {
+        info.highestCheckout <- "No checkout"
+      }
+    } else {
+      info.highestCheckout <- "No checkout"
+    }
+    
+    playersWith180s <- bonus.filtered %>%
+      filter(as.numeric(Bonus) == 180) %>%
+      pull(Player) %>%
+      sapply(function(x) strsplit(x, " ")[[1]][1])
+    
+    if (length(playersWith180s) > 0) {
+      player180Counts <- table(playersWith180s)
+      info.180s <- paste(
+        paste(player180Counts, " (", names(player180Counts), ")", sep = ""),
+        collapse = ", "
+      )
+    } else {
+      info.180s <- "0"
+    }
     
     info.table <- data.frame(
       RowHeader = c(
