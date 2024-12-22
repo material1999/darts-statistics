@@ -1687,6 +1687,9 @@ server <- function(input, output, session) {
     results_temp$`Legs 1` <- as.numeric(results_temp$`Legs 1`)
     results_temp$`Legs 2` <- as.numeric(results_temp$`Legs 2`)
     
+    bonus_temp <- bonus
+    bonus_temp$Bonus <- as.numeric(bonus_temp$Bonus)
+    
     matches_played_all <- paste0(
       sum(results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name), " / ",
       sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
@@ -1707,14 +1710,199 @@ server <- function(input, output, session) {
                     (results_temp$`Player 2` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), 2), "%)"
     )
     
+    rounds_played_all <- length(unique(paste(results_temp$Season, results_temp$Round)[
+      results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
+    ]))
+    
+    nights_won_all <- paste0(
+      sum((results_temp$Phase == "Final" & results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+            (results_temp$Phase == "Final" & results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)), 
+      " (", 
+      round(100 * sum((results_temp$Phase == "Final" & results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                        (results_temp$Phase == "Final" & results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)) / 
+              length(unique(paste(results_temp$Season, results_temp$Round)[
+                results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
+              ])), 2), 
+      "%)"
+    )
+    
+    finals_played_all <- paste0(
+      sum((results_temp$Phase == "Final") & 
+            (results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name)), 
+      " (", 
+      round(100 * sum((results_temp$Phase == "Final") & 
+                        (results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name)) / 
+              length(unique(paste(results_temp$Season, results_temp$Round)[
+                results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
+              ])), 2), 
+      "%)"
+    )
+    
+    knockouts_played_all <- paste0(
+      sum((results_temp$Phase == "Semi-final") & 
+            (results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name)), 
+      " (", 
+      round(100 * sum((results_temp$Phase == "Semi-final") & 
+                        (results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name)) / 
+              length(unique(paste(results_temp$Season, results_temp$Round)[
+                results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
+              ])), 2), 
+      "%)"
+    )
+    
+    first_final_won_all <- if (any((results_temp$Phase == "Final") & 
+                               ((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                                (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)))) {
+      final_wins <- results_temp[(results_temp$Phase == "Final") & 
+                                   ((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                                      (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)), ]
+      first_win <- final_wins[order(as.numeric(final_wins$Season), as.numeric(final_wins$Round)), ][1, ]
+      paste0(first_win$Season, " Round ", first_win$Round)
+    } else {
+      "N/A"
+    }
+    
+    last_final_won_all <- if (any((results_temp$Phase == "Final") & 
+                                   ((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                                    (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)))) {
+      final_wins <- results_temp[(results_temp$Phase == "Final") & 
+                                   ((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                                      (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)), ]
+      first_win <- final_wins[order(-as.numeric(final_wins$Season), -as.numeric(final_wins$Round)), ][1, ]
+      paste0(first_win$Season, " Round ", first_win$Round)
+    } else {
+      "N/A"
+    }
+    
+    dominating_all <- ifelse(
+      nrow(results_temp[((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                           (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)), ]) > 0, 
+      paste0(
+        names(sort(table(ifelse(results_temp$`Player 1` == player_name, 
+                                results_temp$`Player 2`, 
+                                results_temp$`Player 1`)[
+                                  (results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                                    (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)]), 
+                   decreasing = TRUE))[1], 
+        " (", 
+        sort(table(ifelse(results_temp$`Player 1` == player_name, 
+                          results_temp$`Player 2`, 
+                          results_temp$`Player 1`)[
+                            (results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                              (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)]), 
+             decreasing = TRUE)[1], 
+        " matches won)"
+      ), 
+      "N/A"
+    )
+    
+    archenemy_all <- ifelse(
+      nrow(results_temp[((results_temp$`Player 1` == player_name & results_temp$`Legs 1` < results_temp$`Legs 2`) |
+                           (results_temp$`Player 2` == player_name & results_temp$`Legs 2` < results_temp$`Legs 1`)), ]) > 0, 
+      paste0(
+        names(sort(table(ifelse(results_temp$`Player 1` == player_name, 
+                                results_temp$`Player 2`, 
+                                results_temp$`Player 1`)[
+                                  (results_temp$`Player 1` == player_name & results_temp$`Legs 1` < results_temp$`Legs 2`) |
+                                    (results_temp$`Player 2` == player_name & results_temp$`Legs 2` < results_temp$`Legs 1`)]), 
+                   decreasing = TRUE))[1], 
+        " (", 
+        sort(table(ifelse(results_temp$`Player 1` == player_name, 
+                          results_temp$`Player 2`, 
+                          results_temp$`Player 1`)[
+                            (results_temp$`Player 1` == player_name & results_temp$`Legs 1` < results_temp$`Legs 2`) |
+                              (results_temp$`Player 2` == player_name & results_temp$`Legs 2` < results_temp$`Legs 1`)]), 
+             decreasing = TRUE)[1], 
+        " matches lost)"
+      ), 
+      "N/A"
+    )
+    
+    whitewashes_all <- paste0(
+      sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2` & results_temp$`Legs 2` == 0) |
+            (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1` & results_temp$`Legs 1` == 0)), 
+      " (", 
+      round(100 * sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2` & results_temp$`Legs 2` == 0) |
+                        (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1` & results_temp$`Legs 1` == 0)) /
+              sum(results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name), 2), 
+      "%)"
+    )
+    
+    shutouts_all <- paste0(
+      sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` < results_temp$`Legs 2` & results_temp$`Legs 1` == 0) |
+            (results_temp$`Player 2` == player_name & results_temp$`Legs 2` < results_temp$`Legs 1` & results_temp$`Legs 2` == 0)), 
+      " (", 
+      round(100 * sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` < results_temp$`Legs 2` & results_temp$`Legs 1` == 0) |
+                        (results_temp$`Player 2` == player_name & results_temp$`Legs 2` < results_temp$`Legs 1` & results_temp$`Legs 2` == 0)) /
+              sum(results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name), 2), 
+      "%)"
+    )
+    
+    oneeighty_all <- ifelse(sum(bonus_temp$Player == player_name & bonus_temp$Bonus == 180) > 0, 
+                            sum(bonus_temp$Player == player_name & bonus_temp$Bonus == 180), 
+                            "N/A")
+    
+    checkouts_all <- ifelse(
+      length(bonus_temp$Bonus[bonus_temp$Player == player_name & bonus_temp$Bonus < 180]) > 0,
+      paste(sort(bonus_temp$Bonus[bonus_temp$Player == player_name & bonus_temp$Bonus < 180], decreasing = TRUE), collapse = ", "),
+      "N/A"
+    )
+    
+    getBestOverallResults <- function(player_name) {
+      unique_season_rounds <- unique(results[, c("Season", "Round")])
+      best_rank <- Inf
+      count_best_rank <- 0
+      for (i in 1:nrow(unique_season_rounds)) {
+        season <- unique_season_rounds$Season[i]
+        round <- unique_season_rounds$Round[i]
+        results_table <- calculateRoundStandingsTable(season, round)
+        player_results <- results_table[results_table$Player == player_name, ]
+        if (nrow(player_results) == 0) next
+        current_rank <- as.numeric(player_results$`#`)
+        if (current_rank < best_rank) {
+          best_rank <- current_rank
+          count_best_rank <- 1
+        } else if (current_rank == best_rank) {
+          count_best_rank <- count_best_rank + 1
+        }
+      }
+      result <- paste0("#", best_rank, " (", count_best_rank, "x)")
+      return(result)
+    }
+
+    best_round_all <- getBestOverallResults(player_name)
+    
+    getWorstOverallResults <- function(player_name) {
+      unique_season_rounds <- unique(results[, c("Season", "Round")])
+      worst_rank <- -Inf
+      count_worst_rank <- 0
+      for (i in 1:nrow(unique_season_rounds)) {
+        season <- unique_season_rounds$Season[i]
+        round <- unique_season_rounds$Round[i]
+        results_table <- calculateRoundStandingsTable(season, round)
+        player_results <- results_table[results_table$Player == player_name, ]
+        if (nrow(player_results) == 0) next
+        current_rank <- as.numeric(player_results$`#`)
+        if (current_rank > worst_rank) {
+          worst_rank <- current_rank
+          count_worst_rank <- 1
+        } else if (current_rank == worst_rank) {
+          count_worst_rank <- count_worst_rank + 1
+        }
+      }
+      result <- paste0("#", worst_rank, " (", count_worst_rank, "x)")
+      return(result)
+    }
+    worst_round_all <- getWorstOverallResults(player_name)
+    
     stats_df <- data.frame(
       All_Time = c(matches_played_all, legs_played_all,
-                   0, 0, 0, 0,
-                   0, 0,
-                   0, 0, 0, 0,
-                   0, 0, 0, 0,
-                   0, 0,
-                   0, 0, 0, 0
+                   rounds_played_all, nights_won_all, finals_played_all, knockouts_played_all,
+                   first_final_won_all, last_final_won_all,
+                   best_round_all, worst_round_all, "", "",
+                   oneeighty_all, checkouts_all,
+                   dominating_all, archenemy_all, whitewashes_all, shutouts_all,
+                   "", "", "", ""
                    ),
       Statistics = c("Matches played / won",
                      "Legs played / won",
@@ -1728,24 +1916,24 @@ server <- function(input, output, session) {
                      "Worst round",
                      "Average standing per round",
                      "Average points per round",
-                     "Best season",
-                     "Worst season",
-                     "Average standing per season",
-                     "Average points per season",
                      "180s",
                      "Highest checkouts",
                      "Dominating (most matches won against)",
                      "Archenemy (most matches lost against)",
                      "Whitewashes (matches won without losing a leg)",
-                     "Shutouts (matches lost without winning a leg)"
+                     "Shutouts (matches lost without winning a leg)",
+                     "Best season",
+                     "Worst season",
+                     "Average standing per season",
+                     "Average points per season"
       ),
-      Current_Season = c(0, 0,
-                         0, 0, 0, 0,
-                         0, 0,
-                         0, 0, 0, 0,
-                         0, 0, 0, 0,
-                         0, 0,
-                         0, 0, 0, 0
+      Current_Season = c("", "",
+                         "", "", "", "",
+                         "", "",
+                         "", "", "", "",
+                         "", "",
+                         "", "", "", "",
+                         "---", "---", "---", "---"
       )
     )
     return(stats_df)
@@ -1756,7 +1944,7 @@ server <- function(input, output, session) {
       stats_data <- calculateStats(input$player),
       defaultPageSize = nrow(stats_data),
       rowStyle = function(index) {
-        if (index == 2 | index == 6 | index == 8 | index == 12 | index == 16 | index == 18 | index == 22) {
+        if (index == 2 | index == 6 | index == 8 | index == 12 | index == 14 | index == 18 | index == 22) {
           list(borderBottom = "1px solid black")
         } else {
           NULL
