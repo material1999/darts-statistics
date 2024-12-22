@@ -305,11 +305,11 @@ ui <- tagList(
                                                   div(strong("Bio")),
                                                   strong(class = "bio", "Nickname"),
                                                   div(class = "bio", uiOutput("bio_nickname")),
-                                                  strong(class = "bio", "Walk-On Music"),
+                                                  strong(class = "bio", "Walk-on music"),
                                                   div(class = "bio", uiOutput("bio_walkon")),
-                                                  strong(class = "bio", "Darts Used"),
+                                                  strong(class = "bio", "Darts used"),
                                                   div(class = "bio", uiOutput("bio_darts")),
-                                                  strong(class = "bio", "Date of Birth"),
+                                                  strong(class = "bio", "Date of birth"),
                                                   div(class = "bio", uiOutput("bio_birth")),
                                                   strong(class = "bio", "Hometown"),
                                                   div(class = "bio", uiOutput("bio_hometown")),
@@ -320,7 +320,17 @@ ui <- tagList(
                                        column(5,
                                               div(class = "subtitle-container",
                                                   style = "padding-bottom: 20px;",
-                                                  div(strong("Stats"))
+                                                  div(strong("Current season")),
+                                                  strong(class = "bio", "Standing"),
+                                                  div(class = "bio", uiOutput("bio_standing")),
+                                                  strong(class = "bio", "Chasing"),
+                                                  div(class = "bio", uiOutput("bio_chasing")),
+                                                  strong(class = "bio", "Chased by"),
+                                                  div(class = "bio", uiOutput("bio_chased_by")),
+                                                  strong(class = "bio", "Gap to leader"),
+                                                  div(class = "bio", uiOutput("bio_gap_to_leader")),
+                                                  strong(class = "bio", "Last 5 rounds"),
+                                                  div(class = "bio", uiOutput("bio_last_five_rounds"))
                                                   )
                                        )
                                      )),
@@ -424,6 +434,79 @@ server <- function(input, output, session) {
     bio[bio$`Player` == input$player, ]$`Career 180s`
   })
   
+  output$bio_standing <- renderUI({
+    standings <- calculateStandingsTable(max(results$Season))
+    player_data <- standings[standings$Player == input$player, ]
+    standing <- player_data$`#`
+    points <- player_data$Points
+    HTML(paste0("#", standing, " with ", points, " point(s)"))
+  })
+  
+  output$bio_chasing <- renderUI({
+    standings <- calculateStandingsTable(max(results$Season))
+    player_data <- standings[standings$Player == input$player, ]
+    current_standing <- as.numeric(player_data$`#`)
+    if (current_standing == 1) {
+      return("You are already at the top!")
+    }
+    player_ahead_data <- standings[standings$`#` == as.character(current_standing - 1), ]
+    standing_ahead <- player_ahead_data$`#`
+    player_ahead <- player_ahead_data$Player
+    points_ahead <- player_ahead_data$Points
+    HTML(paste0("#", standing_ahead, " ", player_ahead, " with ", points_ahead, " point(s)"))
+  })
+  
+  output$bio_chased_by <- renderUI({
+    standings <- calculateStandingsTable(max(results$Season))
+    player_data <- standings[standings$Player == input$player, ]
+    current_standing <- as.numeric(player_data$`#`)
+    if (current_standing == nrow(standings)) {
+      return("No one is behind you!")
+    }
+    player_behind_data <- standings[standings$`#` == as.character(current_standing + 1), ]
+    standing_behind <- player_behind_data$`#`
+    player_behind <- player_behind_data$Player
+    points_behind <- player_behind_data$Points
+    HTML(paste0("#", standing_behind, " ", player_behind, " with ", points_behind, " point(s)"))
+  })
+  
+  output$bio_gap_to_leader <- renderUI({
+    standings <- calculateStandingsTable(max(results$Season))
+    leader_data <- standings[as.numeric(standings$`#`) == 1, ]
+    leader_name <- leader_data$Player
+    leader_points <- leader_data$Points
+    player_data <- standings[standings$Player == input$player, ]
+    player_points <- player_data$Points
+    gap <- leader_points - player_points
+    if (gap == 0) {
+      return("You are the leader!")
+    } else {
+      HTML(paste0(gap, " point(s) behind ", leader_name, " with ", leader_points, " point(s)"))
+    }
+  })
+  
+  output$bio_last_five_rounds <- renderUI({
+    latest_season <- max(results$Season)
+    last_five_rounds <- results %>%
+      filter(Season == latest_season) %>%
+      arrange(desc(as.numeric(Round))) %>%
+      pull(as.numeric(Round)) %>%
+      unique() %>%
+      head(5)
+    round_results <- list()
+    for (round in last_five_rounds) {
+      round_table <- calculateRoundStandingsTable(latest_season, round)
+      player_data <- round_table[round_table$Player == input$player, ]
+      if (length(player_data$`#`) == 0) {
+        standing <- "N/A"
+      } else {
+        standing <- paste0("#", player_data$`#`)
+      }
+      round_results[[round]] <- paste0(standing, " in ", latest_season, " Round ", round)
+    }
+    HTML(paste(round_results, collapse = "<br>"))
+  })
+  
   output$player_image <- renderUI({
     tags$figure(
       tags$img(
@@ -491,7 +574,6 @@ server <- function(input, output, session) {
     info.legsPlayed <- sum(as.numeric(c(results.filtered$`Legs 1`,
                                         results.filtered$`Legs 2`)))
     
-    # Calculate highest checkout
     validBonuses <- as.numeric(bonus.filtered$Bonus)
     validBonuses <- validBonuses[validBonuses <= 170]
     
@@ -509,7 +591,6 @@ server <- function(input, output, session) {
       info.highestCheckout <- "No checkout"
     }
     
-    # Calculate 180s
     playersWith180s <- bonus.filtered %>%
       filter(as.numeric(Bonus) == 180) %>%
       pull(Player) %>%
