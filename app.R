@@ -1684,16 +1684,40 @@ server <- function(input, output, session) {
   output$stats_table <- renderReactable({
     reactable(
       stats_data <- data.frame(
-        All_Time = c(0, 0, 0, 0, 0, 0),
+        All_Time = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         Statistics = c("Matches played / won",
                        "Legs played / won",
                        "Rounds played",
                        "Nights won",
                        "Finals",
-                       "Top-4 finishes"
+                       "Top-4 finishes",
+                       "First night won",
+                       "Last night won",
+                       "Best round",
+                       "Worst round",
+                       "Average standing per round",
+                       "Average points per round",
+                       "Best season",
+                       "Worst season",
+                       "Average standing per season",
+                       "Average points per season",
+                       "180s",
+                       "Highest checkouts",
+                       "Dominating (most matches won against)",
+                       "Archenemy (most matches lost against)",
+                       "Whitewashes (matches won without losing a leg)",
+                       "Shutouts (matches lost without winning a leg)"
                        ),
-        Current_Season = c(0, 0, 0, 0, 0, 0)
+        Current_Season = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
       ),
+      defaultPageSize = nrow(stats_data),
+      rowStyle = function(index) {
+        if (index == 2 | index == 6 | index == 8 | index == 12 | index == 16 | index == 18 | index == 22) {
+          list(borderBottom = "1px solid black")
+        } else {
+          NULL
+        }
+      },
       columns = list(
         All_Time = colDef(name = "All-time", align = "center"),
         Statistics = colDef(name = "vs.", align = "center"),
@@ -1704,7 +1728,8 @@ server <- function(input, output, session) {
       theme = reactableTheme(
         headerStyle = list(
           fontSize = "1.2em",
-          fontWeight = "bold"
+          fontWeight = "bold",
+          borderBottom = "1px solid black"
         )
       )
     )
