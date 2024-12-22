@@ -1681,35 +1681,79 @@ server <- function(input, output, session) {
     )
   })
   
+  calculateStats <- function(player_name) {
+    
+    results_temp <- results
+    results_temp$`Legs 1` <- as.numeric(results_temp$`Legs 1`)
+    results_temp$`Legs 2` <- as.numeric(results_temp$`Legs 2`)
+    
+    matches_played_all <- paste0(
+      sum(results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name), " / ",
+      sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+            (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)), " (",
+      round(100 * sum((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                        (results_temp$`Player 2` == player_name & results_temp$`Legs 2` > results_temp$`Legs 1`)) /
+              sum(results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name), 2), "%)"
+    )
+    
+    legs_played_all <- paste0(
+      sum((results_temp$`Player 1` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`)  +
+            (results_temp$`Player 2` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), " / ",
+      sum((results_temp$`Player 1` == player_name) * results_temp$`Legs 1` +
+            (results_temp$`Player 2` == player_name) * results_temp$`Legs 2`), " (",
+      round(100 * sum((results_temp$`Player 1` == player_name) * results_temp$`Legs 1` +
+                        (results_temp$`Player 2` == player_name) * results_temp$`Legs 2`) /
+              sum((results_temp$`Player 1` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`) + 
+                    (results_temp$`Player 2` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), 2), "%)"
+    )
+    
+    stats_df <- data.frame(
+      All_Time = c(matches_played_all, legs_played_all,
+                   0, 0, 0, 0,
+                   0, 0,
+                   0, 0, 0, 0,
+                   0, 0, 0, 0,
+                   0, 0,
+                   0, 0, 0, 0
+                   ),
+      Statistics = c("Matches played / won",
+                     "Legs played / won",
+                     "Rounds played",
+                     "Nights won",
+                     "Finals",
+                     "Top-4 finishes",
+                     "First night won",
+                     "Last night won",
+                     "Best round",
+                     "Worst round",
+                     "Average standing per round",
+                     "Average points per round",
+                     "Best season",
+                     "Worst season",
+                     "Average standing per season",
+                     "Average points per season",
+                     "180s",
+                     "Highest checkouts",
+                     "Dominating (most matches won against)",
+                     "Archenemy (most matches lost against)",
+                     "Whitewashes (matches won without losing a leg)",
+                     "Shutouts (matches lost without winning a leg)"
+      ),
+      Current_Season = c(0, 0,
+                         0, 0, 0, 0,
+                         0, 0,
+                         0, 0, 0, 0,
+                         0, 0, 0, 0,
+                         0, 0,
+                         0, 0, 0, 0
+      )
+    )
+    return(stats_df)
+  }
+  
   output$stats_table <- renderReactable({
     reactable(
-      stats_data <- data.frame(
-        All_Time = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        Statistics = c("Matches played / won",
-                       "Legs played / won",
-                       "Rounds played",
-                       "Nights won",
-                       "Finals",
-                       "Top-4 finishes",
-                       "First night won",
-                       "Last night won",
-                       "Best round",
-                       "Worst round",
-                       "Average standing per round",
-                       "Average points per round",
-                       "Best season",
-                       "Worst season",
-                       "Average standing per season",
-                       "Average points per season",
-                       "180s",
-                       "Highest checkouts",
-                       "Dominating (most matches won against)",
-                       "Archenemy (most matches lost against)",
-                       "Whitewashes (matches won without losing a leg)",
-                       "Shutouts (matches lost without winning a leg)"
-                       ),
-        Current_Season = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-      ),
+      stats_data <- calculateStats(input$player),
       defaultPageSize = nrow(stats_data),
       rowStyle = function(index) {
         if (index == 2 | index == 6 | index == 8 | index == 12 | index == 16 | index == 18 | index == 22) {
