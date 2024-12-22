@@ -145,6 +145,10 @@ ui <- tagList(
       .bio {
         font-size: 0.5em;
       }
+      .stat {
+        font-size: 0.5em;
+        padding-top: 20px;
+      }
       .square-image {
         width: 100%;
         height: auto;
@@ -232,6 +236,7 @@ ui <- tagList(
                                      div(class = "table-container",
                                          plotlyOutput("overallPositionsPlot", height = "500px")),
                                      div(class = "table-container",
+                                         style = "padding-bottom: 35px;",
                                          plotlyOutput("positionsPlot", height = "500px"))),
                             tabPanel("Rounds", value = 2,
                                      div(class = "title-container",
@@ -271,6 +276,7 @@ ui <- tagList(
                                      div(class = "title-container",
                                          strong("Match results")),
                                      div(class = "table-container",
+                                         style = "padding-bottom: 35px;",
                                          reactableOutput("roundMatches"))),
                             tabPanel("All time table", value = 3,
                                      div(class = "title-container",
@@ -330,7 +336,14 @@ ui <- tagList(
                                                   div(class = "bio", uiOutput("bio_last_five_rounds"))
                                                   )
                                        )
-                                     )),
+                                     ),
+                                     div(class = "subtitle-container",
+                                         style = "padding-left: 10px; padding-right: 10px;",
+                                         div(strong("Statistics"))),
+                                     div(class = "table-container",
+                                         style = "padding-bottom: 35px;",
+                                         reactableOutput("stats_table"))
+                                     ),
                             tabPanel("Gallery", value = 6,
                                      div(class = "title-container",
                                          strong("2024")),
@@ -1665,6 +1678,35 @@ server <- function(input, output, session) {
       ),
       searchable = TRUE, minRows = 10, highlight = TRUE, outlined = TRUE,
       striped = TRUE, sortable = FALSE, borderless = TRUE
+    )
+  })
+  
+  output$stats_table <- renderReactable({
+    reactable(
+      stats_data <- data.frame(
+        All_Time = c(0, 0, 0, 0, 0, 0),
+        Statistics = c("Matches played / won",
+                       "Legs played / won",
+                       "Rounds played",
+                       "Nights won",
+                       "Finals",
+                       "Top-4 finishes"
+                       ),
+        Current_Season = c(0, 0, 0, 0, 0, 0)
+      ),
+      columns = list(
+        All_Time = colDef(name = "All-time", align = "center"),
+        Statistics = colDef(name = "vs.", align = "center"),
+        Current_Season = colDef(name = "Current season", align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE,
+      theme = reactableTheme(
+        headerStyle = list(
+          fontSize = "1.2em",
+          fontWeight = "bold"
+        )
+      )
     )
   })
   
