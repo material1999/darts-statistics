@@ -212,9 +212,9 @@ ui <- tagList(
                 background-color: #f5f5f5;",
                 
                 tabsetPanel(id = "plotTabs",
-                            tabPanel("Current season", value = 1,
+                            tabPanel("Seasons", value = 1,
                                      div(class = "title-container",
-                                         strong("Season standings")),
+                                         strong("Standings")),
                                      div(class = "table-container",
                                          reactableOutput("standingsTable")),
                                      div(class = "title-container",
@@ -233,10 +233,7 @@ ui <- tagList(
                                          plotlyOutput("overallPositionsPlot", height = "500px")),
                                      div(class = "table-container",
                                          plotlyOutput("positionsPlot", height = "500px"))),
-                            tabPanel("Past seasons", value = 2,
-                                     div(class = "title-container",
-                                         p("Work in progress..."))),
-                            tabPanel("Round results", value = 3,
+                            tabPanel("Rounds", value = 2,
                                      div(class = "title-container",
                                          strong("Final standings")),
                                      div(class = "table-container",
@@ -275,13 +272,13 @@ ui <- tagList(
                                          strong("Match results")),
                                      div(class = "table-container",
                                          reactableOutput("roundMatches"))),
-                            tabPanel("All time table", value = 4,
+                            tabPanel("All time table", value = 3,
                                      div(class = "title-container",
                                          p("Work in progress..."))),
-                            tabPanel("Rivalries", value = 5,
+                            tabPanel("Rivalries", value = 4,
                                      div(class = "title-container",
                                          p("Work in progress..."))),
-                            tabPanel("Player bio", value = 6,
+                            tabPanel("Player bio", value = 5,
                                      fluidRow(
                                        style = "padding-left: 10px; padding-right: 10px;",
                                        column(4,
@@ -334,7 +331,7 @@ ui <- tagList(
                                                   )
                                        )
                                      )),
-                            tabPanel("Gallery", value = 7,
+                            tabPanel("Gallery", value = 6,
                                      div(class = "title-container",
                                          strong("2024")),
                                      fluidRow(
@@ -354,7 +351,7 @@ ui <- tagList(
                                      ),
                                      uiOutput("modals")
                                      ),
-                            tabPanel("Videos", value = 8,
+                            tabPanel("Videos", value = 7,
                                      div(class = "title-container",
                                          strong("2024 - Round 2 Final - Berci vs. Máté")),
                                      div(HTML('<iframe width="784" height="441" src="https://www.youtube.com/embed/HAATwl3KCmk?si=MuQyE2TNWT2s1MEa" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'),
@@ -521,32 +518,32 @@ server <- function(input, output, session) {
   })
   
   output$showSeasonInfo <- reactive({
-    ifelse(input$plotTabs == 1 | input$plotTabs == 2, TRUE, FALSE)
+    ifelse(input$plotTabs == 1, TRUE, FALSE)
   })
   outputOptions(output, "showSeasonInfo", suspendWhenHidden = FALSE)
   
   output$showRoundInfo <- reactive({
-    ifelse(input$plotTabs == 3, TRUE, FALSE)
+    ifelse(input$plotTabs == 2, TRUE, FALSE)
   })
   outputOptions(output, "showRoundInfo", suspendWhenHidden = FALSE)
   
   output$showSeason <- reactive({
-    ifelse(input$plotTabs == 2 | input$plotTabs == 3, TRUE, FALSE)
+    ifelse(input$plotTabs == 1 | input$plotTabs == 2, TRUE, FALSE)
   })
   outputOptions(output, "showSeason", suspendWhenHidden = FALSE)
   
   output$showRound <- reactive({
-    ifelse(input$plotTabs == 3, TRUE, FALSE)
+    ifelse(input$plotTabs == 2, TRUE, FALSE)
   })
   outputOptions(output, "showRound", suspendWhenHidden = FALSE)
   
   output$showPlayer <- reactive({
-    ifelse(input$plotTabs == 5 | input$plotTabs == 6, TRUE, FALSE)
+    ifelse(input$plotTabs == 4 | input$plotTabs == 5, TRUE, FALSE)
   })
   outputOptions(output, "showPlayer", suspendWhenHidden = FALSE)
   
   output$showRival <- reactive({
-    ifelse(input$plotTabs == 5, TRUE, FALSE)
+    ifelse(input$plotTabs == 4, TRUE, FALSE)
   })
   outputOptions(output, "showRival", suspendWhenHidden = FALSE)
   
@@ -1543,7 +1540,7 @@ server <- function(input, output, session) {
   
   output$standingsTable <- renderReactable({
     reactable(
-      calculateStandingsTable(max(results$Season)),
+      calculateStandingsTable(input$season),
       defaultPageSize = 15,
       rowStyle = function(index) {
         if (index == 1) {
