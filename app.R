@@ -346,6 +346,10 @@ ui <- tagList(
                                      ),
                             tabPanel("Gallery", value = 6,
                                      div(class = "title-container",
+                                         strong("2025")),
+                                     div(class = "title-container",
+                                         p("Work in progress...")),
+                                     div(class = "title-container",
                                          strong("2024")),
                                      fluidRow(
                                        style = "padding-top: 20px;",
