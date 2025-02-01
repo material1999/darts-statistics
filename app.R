@@ -1183,7 +1183,7 @@ server <- function(input, output, session) {
     }
     
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
+                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000")
     
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "TotalPoints") %>%
@@ -1252,7 +1252,7 @@ server <- function(input, output, session) {
     }
     
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
+                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000")
     
     overall_ranking_history$Round <- as.numeric(overall_ranking_history$Round)
     
@@ -1303,7 +1303,7 @@ server <- function(input, output, session) {
     }
     
     my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99")
+                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000")
     
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Position") %>%
@@ -1363,6 +1363,7 @@ server <- function(input, output, session) {
   output$roundTable <- renderReactable({
     reactable(
       temp <- calculateRoundTable(input$season, input$round),
+      defaultPageSize = 15,
       columns = list(
         "#" = colDef(maxWidth = 50, align = "center"),
         Player = colDef(minWidth = 275),
@@ -1520,6 +1521,7 @@ server <- function(input, output, session) {
   output$roundStandingsTable <- renderReactable({
     reactable(
       calculateRoundStandingsTable(input$season, input$round),
+      defaultPageSize = 15,
       rowStyle = function(index) {
         if (index == 1) {
           list(background = "#f4c136")
@@ -1586,7 +1588,7 @@ server <- function(input, output, session) {
   
   output$positionsPerRoundTable <- renderReactable({
     reactable(
-      calculatePositionsPerRoundTable(max(results$Season)),
+      calculatePositionsPerRoundTable(input$season),
       defaultPageSize = 15,
       defaultColDef = colDef(
         align = "center",
@@ -1608,7 +1610,7 @@ server <- function(input, output, session) {
   
   output$pointsPerRoundTable <- renderReactable({
     reactable(
-      calculatePointsPerRoundTable(max(results$Season)),
+      calculatePointsPerRoundTable(input$season),
       defaultPageSize = 15,
       defaultColDef = colDef(
         align = "center",
@@ -1634,15 +1636,15 @@ server <- function(input, output, session) {
   })
   
   output$standingsPlot <- renderPlotly({
-    createStandingsPlot(max(results$Season))
+    createStandingsPlot(input$season)
   })
   
   output$overallPositionsPlot <- renderPlotly({
-    createOverallPositionsPlot(max(results$Season))
+    createOverallPositionsPlot(input$season)
   })
   
   output$positionsPlot <- renderPlotly({
-    createPositionsPlot(max(results$Season))
+    createPositionsPlot(input$season)
   })
   
   output$roundMatches <- renderReactable({
@@ -1898,9 +1900,9 @@ server <- function(input, output, session) {
     
     calculateAveragePositionPerRound <- function(player_name) {
       all_seasons <- unique(results_temp$Season)
-      all_rounds <- unique(results_temp$Round)
       player_positions <- c()
       for (season in all_seasons) {
+        all_rounds <- unique(results_temp$Round[results_temp$Season == season])
         for (round in all_rounds) {
           tryCatch({
             standings <- calculateRoundStandingsTable(season, round)
@@ -1927,9 +1929,9 @@ server <- function(input, output, session) {
     
     calculateAveragePointsPerRound <- function(player_name) {
       all_seasons <- unique(results_temp$Season)
-      all_rounds <- unique(results_temp$Round)
       player_points <- c()
       for (season in all_seasons) {
+        all_rounds <- unique(results_temp$Round[results_temp$Season == season])
         for (round in all_rounds) {
           tryCatch({
             standings <- calculateRoundStandingsTable(season, round)
@@ -1945,7 +1947,7 @@ server <- function(input, output, session) {
           })
         }
       }
-      
+
       if (length(player_points) > 0) {
         average_points <- round(mean(player_points, na.rm = TRUE), 2)
         return(average_points)
