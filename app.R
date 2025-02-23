@@ -1351,7 +1351,7 @@ server <- function(input, output, session) {
   
   output$seasonInfoTable <- renderReactable({
     reactable(
-      calculateSeasonInfo(max(results$Season)),
+      calculateSeasonInfo(input$season),
       columns = list(
         RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
         Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
