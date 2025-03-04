@@ -1739,6 +1739,10 @@ server <- function(input, output, session) {
                     (results_temp$`Player 2` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), 2), "%)"
     )
     
+    seasons_played_all <- length(unique(results_temp$Season[
+      results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
+    ]))
+    
     rounds_played_all <- length(unique(paste(results_temp$Season, results_temp$Round)[
       results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
     ]))
@@ -1778,6 +1782,32 @@ server <- function(input, output, session) {
               ])), 2), 
       "%)"
     )
+    
+    calculateTotalPoints <- function(player_name) {
+      all_seasons <- unique(results_temp$Season)
+      player_points <- c()
+      for (season in all_seasons) {
+        all_rounds <- unique(results_temp$Round[results_temp$Season == season])
+        for (round in all_rounds) {
+          tryCatch({
+            standings <- calculateRoundStandingsTable(season, round)
+            total_points <- standings %>%
+              filter(Player == player_name) %>%
+              mutate(TotalPoints = Points + `Bonus points`) %>%
+              pull(TotalPoints)
+            if (length(total_points) > 0) {
+              player_points <- c(player_points, as.numeric(total_points))
+            }
+          }, error = function(e) {
+            next
+          })
+        }
+      }
+      total_points <- sum(player_points, na.rm = TRUE)
+      return(total_points)
+    }
+    
+    total_points_all <- calculateTotalPoints(player_name)
     
     first_final_won_all <- if (any((results_temp$Phase == "Final") & 
                                ((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
@@ -1998,10 +2028,12 @@ server <- function(input, output, session) {
       
       matches_played_curr = "N/A"
       legs_played_curr = "N/A"
+      seasons_played_curr = "N/A"
       rounds_played_curr = "N/A"
       nights_won_curr = "N/A"
       finals_played_curr = "N/A"
       knockouts_played_curr = "N/A"
+      total_points_curr = "N/A"
       first_final_won_curr = "N/A"
       last_final_won_curr = "N/A"
       dominating_curr = "N/A"
@@ -2036,6 +2068,8 @@ server <- function(input, output, session) {
                 sum((results_temp$`Player 1` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`) + 
                       (results_temp$`Player 2` == player_name) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), 2), "%)"
       )
+      
+      seasons_played_curr = 1
       
       rounds_played_curr <- length(unique(paste(results_temp$Season, results_temp$Round)[
         results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name
@@ -2076,6 +2110,10 @@ server <- function(input, output, session) {
                 ])), 2), 
         "%)"
       )
+      
+      standings <- calculateStandingsTable(max(results$Season))
+      player_data <- standings[standings$Player == input$player, ]
+      total_points_curr <- player_data$Points
       
       first_final_won_curr <- if (any((results_temp$Phase == "Final") & 
                                       ((results_temp$`Player 1` == player_name & results_temp$`Legs 1` > results_temp$`Legs 2`) |
@@ -2286,8 +2324,8 @@ server <- function(input, output, session) {
     
     stats_df <- data.frame(
       All_Time = c(matches_played_all, legs_played_all,
-                   "?", rounds_played_all,
-                   knockouts_played_all, finals_played_all, nights_won_all, "?",
+                   seasons_played_all, rounds_played_all,
+                   knockouts_played_all, finals_played_all, nights_won_all, total_points_all,
                    first_final_won_all, last_final_won_all,
                    best_round_all, worst_round_all, average_standing_all, average_points_all,
                    oneeighty_all, checkouts_all,
@@ -2315,8 +2353,8 @@ server <- function(input, output, session) {
                      "Shutouts (matches lost without winning a leg)"
       ),
       Current_Season = c(matches_played_curr, legs_played_curr,
-                         "?", rounds_played_curr,
-                         knockouts_played_curr, finals_played_curr, nights_won_curr, "?",
+                         seasons_played_curr, rounds_played_curr,
+                         knockouts_played_curr, finals_played_curr, nights_won_curr, total_points_curr,
                          first_final_won_curr, last_final_won_curr,
                          best_round_curr, worst_round_curr, average_standing_curr, average_points_curr,
                          oneeighty_curr, checkouts_curr,
