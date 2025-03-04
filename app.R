@@ -299,7 +299,7 @@ ui <- tagList(
                                                   files = walkon_all,
                                                   options = list(onend = "function() {stop();}")
                                                 ),
-                                                style = "padding-top: 10px;"
+                                                style = "padding-top: 20px;"
                                               ),
                                        ),
                                        column(3,
@@ -317,7 +317,11 @@ ui <- tagList(
                                                   strong(class = "bio", "Hometown"),
                                                   div(class = "bio", uiOutput("bio_hometown")),
                                                   strong(class = "bio", "Career 180s"),
-                                                  div(class = "bio", uiOutput("bio_oneeighty"))
+                                                  div(class = "bio", uiOutput("bio_oneeighty")),
+                                                  strong(class = "bio", "Best season"),
+                                                  div(class = "bio", uiOutput("bio_bestseason")),
+                                                  strong(class = "bio", "Worst season"),
+                                                  div(class = "bio", uiOutput("bio_worstseason"))
                                                   )
                                        ),
                                        column(5,
@@ -332,8 +336,8 @@ ui <- tagList(
                                                   div(class = "bio", uiOutput("bio_chased_by")),
                                                   strong(class = "bio", "Gap to leader"),
                                                   div(class = "bio", uiOutput("bio_gap_to_leader")),
-                                                  strong(class = "bio", "Last 5 rounds"),
-                                                  div(class = "bio", uiOutput("bio_last_five_rounds"))
+                                                  strong(class = "bio", "Last 10 rounds"),
+                                                  div(class = "bio", uiOutput("bio_last_ten_rounds"))
                                                   )
                                        )
                                      ),
@@ -448,6 +452,14 @@ server <- function(input, output, session) {
     bio[bio$`Player` == input$player, ]$`Career 180s`
   })
   
+  output$bio_bestseason <- renderUI({
+    "?"
+  })
+  
+  output$bio_worstseason <- renderUI({
+    "?"
+  })
+  
   output$bio_standing <- renderUI({
     standings <- calculateStandingsTable(max(results$Season))
     player_data <- standings[standings$Player == input$player, ]
@@ -509,24 +521,25 @@ server <- function(input, output, session) {
     }
   })
   
-  output$bio_last_five_rounds <- renderUI({
+  output$bio_last_ten_rounds <- renderUI({
     latest_season <- max(results$Season)
     last_five_rounds <- results %>%
-      filter(Season == latest_season) %>%
-      arrange(desc(as.numeric(Round))) %>%
-      pull(as.numeric(Round)) %>%
+      arrange(desc(as.numeric(Season)), desc(as.numeric(Round))) %>%
+      select(Season, Round) %>%
       unique() %>%
-      head(5)
+      head(10)
     round_results <- list()
-    for (round in last_five_rounds) {
-      round_table <- calculateRoundStandingsTable(latest_season, round)
+    for (i in 1:nrow(last_five_rounds)) {
+      season <- last_five_rounds$Season[i]
+      round <- last_five_rounds$Round[i]
+      round_table <- calculateRoundStandingsTable(season, round)
       player_data <- round_table[round_table$Player == input$player, ]
       if (length(player_data$`#`) == 0) {
         standing <- "N/A"
       } else {
         standing <- paste0("#", player_data$`#`)
       }
-      round_results[[round]] <- paste0(standing, " in ", latest_season, " Round ", round)
+      round_results[[round]] <- paste0(standing, " in ", season, " Round ", round)
     }
     HTML(paste(round_results, collapse = "<br>"))
   })
@@ -2273,19 +2286,21 @@ server <- function(input, output, session) {
     
     stats_df <- data.frame(
       All_Time = c(matches_played_all, legs_played_all,
-                   rounds_played_all, nights_won_all, finals_played_all, knockouts_played_all,
+                   "?", rounds_played_all,
+                   knockouts_played_all, finals_played_all, nights_won_all, "?",
                    first_final_won_all, last_final_won_all,
                    best_round_all, worst_round_all, average_standing_all, average_points_all,
                    oneeighty_all, checkouts_all,
-                   dominating_all, archenemy_all, whitewashes_all, shutouts_all,
-                   "", "", "", ""
+                   dominating_all, archenemy_all, whitewashes_all, shutouts_all
                    ),
       Statistics = c("Matches played / won",
                      "Legs played / won",
+                     "Seasons played",
                      "Rounds played",
-                     "Nights won",
-                     "Finals",
                      "Top-4 finishes",
+                     "Finals",
+                     "Nights won",
+                     "Total points",
                      "First night won",
                      "Last night won",
                      "Best round",
@@ -2297,19 +2312,15 @@ server <- function(input, output, session) {
                      "Dominating (most matches won against)",
                      "Archenemy (most matches lost against)",
                      "Whitewashes (matches won without losing a leg)",
-                     "Shutouts (matches lost without winning a leg)",
-                     "Best season",
-                     "Worst season",
-                     "Average standing per season",
-                     "Average points per season"
+                     "Shutouts (matches lost without winning a leg)"
       ),
       Current_Season = c(matches_played_curr, legs_played_curr,
-                         rounds_played_curr, nights_won_curr, finals_played_curr, knockouts_played_curr,
+                         "?", rounds_played_curr,
+                         knockouts_played_curr, finals_played_curr, nights_won_curr, "?",
                          first_final_won_curr, last_final_won_curr,
                          best_round_curr, worst_round_curr, average_standing_curr, average_points_curr,
                          oneeighty_curr, checkouts_curr,
-                         dominating_curr, archenemy_curr, whitewashes_curr, shutouts_curr,
-                         "---", "---", "---", "---"
+                         dominating_curr, archenemy_curr, whitewashes_curr, shutouts_curr
       )
     )
     return(stats_df)
@@ -2320,7 +2331,7 @@ server <- function(input, output, session) {
       stats_data <- calculateStats(input$player),
       defaultPageSize = nrow(stats_data),
       rowStyle = function(index) {
-        if (index == 2 | index == 6 | index == 8 | index == 12 | index == 14 | index == 18 | index == 22) {
+        if (index == 2 | index == 4 | index == 8 | index == 10 | index == 14 | index == 16 | index == 20) {
           list(borderBottom = "1px solid black")
         } else {
           NULL
