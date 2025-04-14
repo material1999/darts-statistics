@@ -453,11 +453,41 @@ server <- function(input, output, session) {
   })
   
   output$bio_bestseason <- renderUI({
-    "?"
+    years <- as.numeric(unique(results$Season))
+    best_standing <- Inf
+    best_season <- NULL
+    best_points <- NULL
+    for (year in years) {
+      standings <- calculateStandingsTable(year)
+      player_data <- standings[standings$Player == input$player, ]
+      standing <- player_data$`#`
+      points <- player_data$Points
+      if (as.numeric(standing) < best_standing) {
+        best_standing <- as.numeric(standing)
+        best_season <- year
+        best_points <- points
+      }
+    }
+    HTML(paste0("#", best_standing, " with ", best_points, " point(s) in season ", best_season))
   })
   
   output$bio_worstseason <- renderUI({
-    "?"
+    years <- as.numeric(unique(results$Season))
+    worst_standing <- -Inf
+    worst_season <- NULL
+    worst_points <- NULL
+    for (year in years) {
+      standings <- calculateStandingsTable(year)
+      player_data <- standings[standings$Player == input$player, ]
+      standing <- player_data$`#`
+      points <- player_data$Points
+      if (as.numeric(standing) > worst_standing) {
+        worst_standing <- as.numeric(standing)
+        worst_season <- year
+        worst_points <- points
+      }
+    }
+    HTML(paste0("#", worst_standing, " with ", worst_points, " point(s) in season ", worst_season))
   })
   
   output$bio_standing <- renderUI({
