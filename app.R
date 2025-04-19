@@ -282,8 +282,36 @@ ui <- tagList(
                                      div(class = "title-container",
                                          p("Work in progress..."))),
                             tabPanel("Rivalries", value = 4,
-                                     div(class = "title-container",
-                                         p("Work in progress..."))),
+                                     fluidRow(
+                                       style = "padding-left: 10px; padding-right: 10px;",
+                                       column(5,
+                                              div(class = "subtitle-container",
+                                                  style = "padding-bottom: 20px; text-align: center;",
+                                                  uiOutput("rival1_name")
+                                              ),
+                                              div(
+                                                style = "padding-bottom: 20px; text-align: center;",
+                                                uiOutput("rival1_image")
+                                              )
+                                       ),
+                                       column(2,
+                                              div(class = "subtitle-container",
+                                                  style = "padding-bottom: 20px; text-align: center;",
+                                                  strong("vs.")
+                                              )
+                                       ),
+                                       column(5,
+                                              div(class = "subtitle-container",
+                                                  style = "padding-bottom: 20px; text-align: center;",
+                                                  uiOutput("rival2_name")
+                                              ),
+                                              div(
+                                                style = "padding-bottom: 20px; text-align: center;",
+                                                uiOutput("rival2_image")
+                                              )
+                                       )
+                                     )
+                            ),
                             tabPanel("Player bio", value = 5,
                                      fluidRow(
                                        style = "padding-left: 10px; padding-right: 10px;",
@@ -419,6 +447,14 @@ server <- function(input, output, session) {
     strong(input$player)
   })
   
+  output$rival1_name <- renderUI({
+    strong(input$player)
+  })
+  
+  output$rival2_name <- renderUI({
+    strong(input$rival)
+  })
+  
   output$bio_nickname <- renderUI({
     bio[bio$`Player` == input$player, ]$`Nickname`
   })
@@ -456,13 +492,13 @@ server <- function(input, output, session) {
     years <- as.numeric(unique(results$Season))
     best_standing <- Inf
     best_season <- NULL
-    best_points <- NULL
+    best_points <- -1
     for (year in years) {
       standings <- calculateStandingsTable(year)
       player_data <- standings[standings$Player == input$player, ]
       standing <- player_data$`#`
       points <- player_data$Points
-      if (as.numeric(standing) < best_standing) {
+      if (length(standing) > 0 && as.numeric(standing) <= best_standing && points > best_points) {
         best_standing <- as.numeric(standing)
         best_season <- year
         best_points <- points
@@ -475,13 +511,13 @@ server <- function(input, output, session) {
     years <- as.numeric(unique(results$Season))
     worst_standing <- -Inf
     worst_season <- NULL
-    worst_points <- NULL
+    worst_points <- Inf
     for (year in years) {
       standings <- calculateStandingsTable(year)
       player_data <- standings[standings$Player == input$player, ]
       standing <- player_data$`#`
       points <- player_data$Points
-      if (as.numeric(standing) > worst_standing) {
+      if (length(standing) > 0 && as.numeric(standing) >= worst_standing && points < worst_points) {
         worst_standing <- as.numeric(standing)
         worst_season <- year
         worst_points <- points
@@ -579,6 +615,32 @@ server <- function(input, output, session) {
       tags$img(
         src = "avatar/" %>%
           paste0(stri_trans_general(tolower(input$player), "Latin-ASCII")) %>%
+          gsub(" ", "_", .) %>%
+          paste0(".jpg"),
+        width = 300,
+        alt = "No image found..."
+      )
+    )
+  })
+  
+  output$rival1_image <- renderUI({
+    tags$figure(
+      tags$img(
+        src = "avatar/" %>%
+          paste0(stri_trans_general(tolower(input$player), "Latin-ASCII")) %>%
+          gsub(" ", "_", .) %>%
+          paste0(".jpg"),
+        width = 300,
+        alt = "No image found..."
+      )
+    )
+  })
+  
+  output$rival2_image <- renderUI({
+    tags$figure(
+      tags$img(
+        src = "avatar/" %>%
+          paste0(stri_trans_general(tolower(input$rival), "Latin-ASCII")) %>%
           gsub(" ", "_", .) %>%
           paste0(".jpg"),
         width = 300,
