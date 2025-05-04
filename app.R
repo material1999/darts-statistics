@@ -1301,8 +1301,11 @@ server <- function(input, output, session) {
       }
     }
     
-    my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000")
+    my_custom_palette <- c(
+      "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
+      "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
+      "#a6761d"
+    )
     
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "TotalPoints") %>%
@@ -1370,8 +1373,11 @@ server <- function(input, output, session) {
       overall_ranking_history <- rbind(overall_ranking_history, current_overall_ranks)
     }
     
-    my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000")
+    my_custom_palette <- c(
+      "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
+      "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
+      "#a6761d"
+    )
     
     overall_ranking_history$Round <- as.numeric(overall_ranking_history$Round)
     
@@ -1421,8 +1427,11 @@ server <- function(input, output, session) {
       }
     }
     
-    my_custom_palette <- c("#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
-                           "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000")
+    my_custom_palette <- c(
+      "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
+      "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
+      "#a6761d"
+    )
     
     results.long <- results.table %>%
       pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Position") %>%
