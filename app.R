@@ -1845,9 +1845,6 @@ server <- function(input, output, session) {
     results_bronze <- results_temp[results_temp$`Phase` == "Bronze match", ]
     results_final <- results_temp[results_temp$`Phase` == "Final", ]
     
-    bonus_temp <- bonus
-    bonus_temp$Bonus <- as.numeric(bonus_temp$Bonus)
-    
     matches_played_1 <- {
       if (nrow(results_temp) == 0) {
         "N/A"
@@ -2194,21 +2191,17 @@ server <- function(input, output, session) {
     
     current_season <- max(as.numeric(results$Season), na.rm = TRUE)
     results_temp <- results[
-      ((results$`Player 1` == player_1 & results$`Player 2` == player_2) |
-        (results$`Player 1` == player_2 & results$`Player 2` == player_1) &
+      (((results$`Player 1` == player_1 & results$`Player 2` == player_2) |
+        (results$`Player 1` == player_2 & results$`Player 2` == player_1)) &
          results$Season == current_season),
     ]
     results_temp$`Legs 1` <- as.numeric(results_temp$`Legs 1`)
     results_temp$`Legs 2` <- as.numeric(results_temp$`Legs 2`)
     
-    
     results_group <- results_temp[results_temp$`Phase` == "Group phase", ]
     results_semi <- results_temp[results_temp$`Phase` == "Semi-final", ]
     results_bronze <- results_temp[results_temp$`Phase` == "Bronze match", ]
     results_final <- results_temp[results_temp$`Phase` == "Final", ]
-    
-    bonus_temp <- bonus
-    bonus_temp$Bonus <- as.numeric(bonus_temp$Bonus)
     
     matches_played_1 <- {
       if (nrow(results_temp) == 0) {
