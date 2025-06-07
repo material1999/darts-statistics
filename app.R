@@ -1997,13 +1997,181 @@ server <- function(input, output, session) {
       }
     }
     
+    legs_played_1 <- {
+      if (nrow(results_temp) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_temp$`Player 1` == player_1) * (results_temp$`Legs 1` + results_temp$`Legs 2`)  +
+                (results_temp$`Player 2` == player_1) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), " / ",
+          sum((results_temp$`Player 1` == player_1) * results_temp$`Legs 1` +
+                (results_temp$`Player 2` == player_1) * results_temp$`Legs 2`), " (",
+          round(100 * sum((results_temp$`Player 1` == player_1) * results_temp$`Legs 1` +
+                            (results_temp$`Player 2` == player_1) * results_temp$`Legs 2`) /
+                  sum((results_temp$`Player 1` == player_1) * (results_temp$`Legs 1` + results_temp$`Legs 2`) + 
+                        (results_temp$`Player 2` == player_1) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
     
+    legs_played_2 <- {
+      if (nrow(results_temp) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_temp$`Player 1` == player_2) * (results_temp$`Legs 1` + results_temp$`Legs 2`)  +
+                (results_temp$`Player 2` == player_2) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), " / ",
+          sum((results_temp$`Player 1` == player_2) * results_temp$`Legs 1` +
+                (results_temp$`Player 2` == player_2) * results_temp$`Legs 2`), " (",
+          round(100 * sum((results_temp$`Player 1` == player_2) * results_temp$`Legs 1` +
+                            (results_temp$`Player 2` == player_2) * results_temp$`Legs 2`) /
+                  sum((results_temp$`Player 1` == player_2) * (results_temp$`Legs 1` + results_temp$`Legs 2`) + 
+                        (results_temp$`Player 2` == player_2) * (results_temp$`Legs 1` + results_temp$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_group_1 <- {
+      if (nrow(results_group) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_group$`Player 1` == player_1) * (results_group$`Legs 1` + results_group$`Legs 2`)  +
+                (results_group$`Player 2` == player_1) * (results_group$`Legs 1` + results_group$`Legs 2`)), " / ",
+          sum((results_group$`Player 1` == player_1) * results_group$`Legs 1` +
+                (results_group$`Player 2` == player_1) * results_group$`Legs 2`), " (",
+          round(100 * sum((results_group$`Player 1` == player_1) * results_group$`Legs 1` +
+                            (results_group$`Player 2` == player_1) * results_group$`Legs 2`) /
+                  sum((results_group$`Player 1` == player_1) * (results_group$`Legs 1` + results_group$`Legs 2`) + 
+                        (results_group$`Player 2` == player_1) * (results_group$`Legs 1` + results_group$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_group_2 <- {
+      if (nrow(results_group) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_group$`Player 1` == player_2) * (results_group$`Legs 1` + results_group$`Legs 2`)  +
+                (results_group$`Player 2` == player_2) * (results_group$`Legs 1` + results_group$`Legs 2`)), " / ",
+          sum((results_group$`Player 1` == player_2) * results_group$`Legs 1` +
+                (results_group$`Player 2` == player_2) * results_group$`Legs 2`), " (",
+          round(100 * sum((results_group$`Player 1` == player_2) * results_group$`Legs 1` +
+                            (results_group$`Player 2` == player_2) * results_group$`Legs 2`) /
+                  sum((results_group$`Player 1` == player_2) * (results_group$`Legs 1` + results_group$`Legs 2`) + 
+                        (results_group$`Player 2` == player_2) * (results_group$`Legs 1` + results_group$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_semi_1 <- {
+      if (nrow(results_semi) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_semi$`Player 1` == player_1) * (results_semi$`Legs 1` + results_semi$`Legs 2`)  +
+                (results_semi$`Player 2` == player_1) * (results_semi$`Legs 1` + results_semi$`Legs 2`)), " / ",
+          sum((results_semi$`Player 1` == player_1) * results_semi$`Legs 1` +
+                (results_semi$`Player 2` == player_1) * results_semi$`Legs 2`), " (",
+          round(100 * sum((results_semi$`Player 1` == player_1) * results_semi$`Legs 1` +
+                            (results_semi$`Player 2` == player_1) * results_semi$`Legs 2`) /
+                  sum((results_semi$`Player 1` == player_1) * (results_semi$`Legs 1` + results_semi$`Legs 2`) + 
+                        (results_semi$`Player 2` == player_1) * (results_semi$`Legs 1` + results_semi$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_semi_2 <- {
+      if (nrow(results_semi) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_semi$`Player 1` == player_2) * (results_semi$`Legs 1` + results_semi$`Legs 2`)  +
+                (results_semi$`Player 2` == player_2) * (results_semi$`Legs 1` + results_semi$`Legs 2`)), " / ",
+          sum((results_semi$`Player 1` == player_2) * results_semi$`Legs 1` +
+                (results_semi$`Player 2` == player_2) * results_semi$`Legs 2`), " (",
+          round(100 * sum((results_semi$`Player 1` == player_2) * results_semi$`Legs 1` +
+                            (results_semi$`Player 2` == player_2) * results_semi$`Legs 2`) /
+                  sum((results_semi$`Player 1` == player_2) * (results_semi$`Legs 1` + results_semi$`Legs 2`) + 
+                        (results_semi$`Player 2` == player_2) * (results_semi$`Legs 1` + results_semi$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_bronze_1 <- {
+      if (nrow(results_bronze) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_bronze$`Player 1` == player_1) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`)  +
+                (results_bronze$`Player 2` == player_1) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`)), " / ",
+          sum((results_bronze$`Player 1` == player_1) * results_bronze$`Legs 1` +
+                (results_bronze$`Player 2` == player_1) * results_bronze$`Legs 2`), " (",
+          round(100 * sum((results_bronze$`Player 1` == player_1) * results_bronze$`Legs 1` +
+                            (results_bronze$`Player 2` == player_1) * results_bronze$`Legs 2`) /
+                  sum((results_bronze$`Player 1` == player_1) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`) + 
+                        (results_bronze$`Player 2` == player_1) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_bronze_2 <- {
+      if (nrow(results_bronze) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_bronze$`Player 1` == player_2) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`)  +
+                (results_bronze$`Player 2` == player_2) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`)), " / ",
+          sum((results_bronze$`Player 1` == player_2) * results_bronze$`Legs 1` +
+                (results_bronze$`Player 2` == player_2) * results_bronze$`Legs 2`), " (",
+          round(100 * sum((results_bronze$`Player 1` == player_2) * results_bronze$`Legs 1` +
+                            (results_bronze$`Player 2` == player_2) * results_bronze$`Legs 2`) /
+                  sum((results_bronze$`Player 1` == player_2) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`) + 
+                        (results_bronze$`Player 2` == player_2) * (results_bronze$`Legs 1` + results_bronze$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_final_1 <- {
+      if (nrow(results_final) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_final$`Player 1` == player_1) * (results_final$`Legs 1` + results_final$`Legs 2`)  +
+                (results_final$`Player 2` == player_1) * (results_final$`Legs 1` + results_final$`Legs 2`)), " / ",
+          sum((results_final$`Player 1` == player_1) * results_final$`Legs 1` +
+                (results_final$`Player 2` == player_1) * results_final$`Legs 2`), " (",
+          round(100 * sum((results_final$`Player 1` == player_1) * results_final$`Legs 1` +
+                            (results_final$`Player 2` == player_1) * results_final$`Legs 2`) /
+                  sum((results_final$`Player 1` == player_1) * (results_final$`Legs 1` + results_final$`Legs 2`) + 
+                        (results_final$`Player 2` == player_1) * (results_final$`Legs 1` + results_final$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
+    
+    legs_played_final_2 <- {
+      if (nrow(results_final) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          sum((results_final$`Player 1` == player_2) * (results_final$`Legs 1` + results_final$`Legs 2`)  +
+                (results_final$`Player 2` == player_2) * (results_final$`Legs 1` + results_final$`Legs 2`)), " / ",
+          sum((results_final$`Player 1` == player_2) * results_final$`Legs 1` +
+                (results_final$`Player 2` == player_2) * results_final$`Legs 2`), " (",
+          round(100 * sum((results_final$`Player 1` == player_2) * results_final$`Legs 1` +
+                            (results_final$`Player 2` == player_2) * results_final$`Legs 2`) /
+                  sum((results_final$`Player 1` == player_2) * (results_final$`Legs 1` + results_final$`Legs 2`) + 
+                        (results_final$`Player 2` == player_2) * (results_final$`Legs 1` + results_final$`Legs 2`)), 2), "%)"
+        )
+      }
+    }
     
     # TODO
     
     rivalries_df <- data.frame(
       Player = c(matches_played_1, matches_played_group_1, matches_played_semi_1, matches_played_bronze_1, matches_played_final_1,
-                 "?", "?", "?", "?", "?"
+                 legs_played_1, legs_played_group_1, legs_played_semi_1, legs_played_bronze_1, legs_played_final_1
       ),
       Statistics = c("Matches played / won",
                         "@ Group phase",
@@ -2017,7 +2185,7 @@ server <- function(input, output, session) {
                         "@ Finals"
       ),
       Rival = c(matches_played_2, matches_played_group_2, matches_played_semi_2, matches_played_bronze_2, matches_played_final_2,
-                "?", "?", "?", "?", "?"
+                legs_played_2, legs_played_group_2, legs_played_semi_2, legs_played_bronze_2, legs_played_final_2
       )
     )
     return(rivalries_df)
