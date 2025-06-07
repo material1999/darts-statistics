@@ -278,7 +278,7 @@ ui <- tagList(
                                      div(class = "table-container",
                                          style = "padding-bottom: 35px;",
                                          reactableOutput("roundMatches"))),
-                            tabPanel("All time table", value = 3,
+                            tabPanel("All-time table", value = 3,
                                      div(class = "title-container",
                                          p("Work in progress..."))),
                             tabPanel("Rivalries", value = 4,
@@ -311,9 +311,17 @@ ui <- tagList(
                                               )
                                        )
                                      ),
+                                     div(class = "subtitle-container",
+                                         style = "padding-left: 10px; padding-right: 10px;",
+                                         div(strong("All-time"))),
                                      div(class = "table-container",
                                          style = "padding-bottom: 35px;",
-                                         reactableOutput("rivalries_table"))
+                                         reactableOutput("rivalries_table_all")),
+                                     div(class = "subtitle-container",
+                                         style = "padding-left: 10px; padding-right: 10px;",
+                                         div(strong("Current season"))),
+                                     div(class = "title-container",
+                                         p("Work in progress..."))
                             ),
                             tabPanel("Player bio", value = 5,
                                      fluidRow(
@@ -1157,7 +1165,7 @@ server <- function(input, output, session) {
       Player = players,
       `Nights won` = rep(0, length(players)),
       `Finals` = rep(0, length(players)),
-      `Top-4 finishes` = rep(0, length(players)),
+      `Semi-finals` = rep(0, length(players)),
       `Matches won` = rep(0, length(players)),
       `Leg difference` = rep(0, length(players)),
       `Legs won` = rep(0, length(players)),
@@ -1178,8 +1186,8 @@ server <- function(input, output, session) {
             results.table[results.table$Player == results.current$Player[j], "Finals"] + 1
         }
         if (j <= 4) {
-          results.table[results.table$Player == results.current$Player[j], "Top-4 finishes"] <-
-            results.table[results.table$Player == results.current$Player[j], "Top-4 finishes"] + 1
+          results.table[results.table$Player == results.current$Player[j], "Semi-finals"] <-
+            results.table[results.table$Player == results.current$Player[j], "Semi-finals"] + 1
         }
         results.table[results.table$Player == results.current$Player[j], "Points"] <-
           results.table[results.table$Player == results.current$Player[j], "Points"] +
@@ -1200,7 +1208,7 @@ server <- function(input, output, session) {
       arrange(desc(Points),
               desc(`Nights won`),
               desc(`Finals`),
-              desc(`Top-4 finishes`),
+              desc(`Semi-finals`),
               desc(`Matches won`),
               desc(`Leg difference`),
               desc(`Legs won`))
@@ -1710,7 +1718,7 @@ server <- function(input, output, session) {
         Player = colDef(minWidth = 200),
         `Nights won` = colDef(minWidth = 100, align = "center"),
         `Finals` = colDef(minWidth = 100, align = "center"),
-        `Top-4 finishes` = colDef(minWidth = 125, align = "center"),
+        `Semi-finals` = colDef(minWidth = 125, align = "center"),
         `Matches won` = colDef(minWidth = 125, align = "center"),
         `Leg difference` = colDef(minWidth = 125, align = "center"),
         `Legs won` = colDef(minWidth = 100, align = "center"),
@@ -1823,7 +1831,196 @@ server <- function(input, output, session) {
   })
   
   calculateRivalries <- function(player_1, player_2) {
+    
+    results_temp <- results[
+      (results$`Player 1` == player_1 & results$`Player 2` == player_2) |
+        (results$`Player 1` == player_2 & results$`Player 2` == player_1),
+    ]
+    results_temp$`Legs 1` <- as.numeric(results_temp$`Legs 1`)
+    results_temp$`Legs 2` <- as.numeric(results_temp$`Legs 2`)
+    
+    results_group <- results_temp[results_temp$`Phase` == "Group phase", ]
+    results_semi <- results_temp[results_temp$`Phase` == "Semi-final", ]
+    results_bronze <- results_temp[results_temp$`Phase` == "Bronze match", ]
+    results_final <- results_temp[results_temp$`Phase` == "Final", ]
+    
+    bonus_temp <- bonus
+    bonus_temp$Bonus <- as.numeric(bonus_temp$Bonus)
+    
+    matches_played_1 <- {
+      if (nrow(results_temp) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_temp), " / ",
+          sum((results_temp$`Player 1` == player_1 & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                (results_temp$`Player 2` == player_1 & results_temp$`Legs 2` > results_temp$`Legs 1`)), " (",
+          round(100 * sum((results_temp$`Player 1` == player_1 & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                            (results_temp$`Player 2` == player_1 & results_temp$`Legs 2` > results_temp$`Legs 1`)) /
+                  sum(results_temp$`Player 1` == player_1 | results_temp$`Player 2` == player_1), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_2 <- {
+      if (nrow(results_temp) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_temp), " / ",
+          sum((results_temp$`Player 1` == player_2 & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                (results_temp$`Player 2` == player_2 & results_temp$`Legs 2` > results_temp$`Legs 1`)), " (",
+          round(100 * sum((results_temp$`Player 1` == player_2 & results_temp$`Legs 1` > results_temp$`Legs 2`) |
+                            (results_temp$`Player 2` == player_2 & results_temp$`Legs 2` > results_temp$`Legs 1`)) /
+                  sum(results_temp$`Player 1` == player_2 | results_temp$`Player 2` == player_2), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_group_1 <- {
+      if (nrow(results_group) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_group), " / ",
+          sum((results_group$`Player 1` == player_1 & results_group$`Legs 1` > results_group$`Legs 2`) |
+                (results_group$`Player 2` == player_1 & results_group$`Legs 2` > results_group$`Legs 1`)), " (",
+          round(100 * sum((results_group$`Player 1` == player_1 & results_group$`Legs 1` > results_group$`Legs 2`) |
+                            (results_group$`Player 2` == player_1 & results_group$`Legs 2` > results_group$`Legs 1`)) /
+                  sum(results_group$`Player 1` == player_1 | results_group$`Player 2` == player_1), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_group_2 <- {
+      if (nrow(results_group) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_group), " / ",
+          sum((results_group$`Player 1` == player_2 & results_group$`Legs 1` > results_group$`Legs 2`) |
+                (results_group$`Player 2` == player_2 & results_group$`Legs 2` > results_group$`Legs 1`)), " (",
+          round(100 * sum((results_group$`Player 1` == player_2 & results_group$`Legs 1` > results_group$`Legs 2`) |
+                            (results_group$`Player 2` == player_2 & results_group$`Legs 2` > results_group$`Legs 1`)) /
+                  sum(results_group$`Player 1` == player_2 | results_group$`Player 2` == player_2), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_semi_1 <- {
+      if (nrow(results_semi) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_semi), " / ",
+          sum((results_semi$`Player 1` == player_1 & results_semi$`Legs 1` > results_semi$`Legs 2`) |
+                (results_semi$`Player 2` == player_1 & results_semi$`Legs 2` > results_semi$`Legs 1`)), " (",
+          round(100 * sum((results_semi$`Player 1` == player_1 & results_semi$`Legs 1` > results_semi$`Legs 2`) |
+                            (results_semi$`Player 2` == player_1 & results_semi$`Legs 2` > results_semi$`Legs 1`)) /
+                  sum(results_semi$`Player 1` == player_1 | results_semi$`Player 2` == player_1), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_semi_2 <- {
+      if (nrow(results_semi) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_semi), " / ",
+          sum((results_semi$`Player 1` == player_2 & results_semi$`Legs 1` > results_semi$`Legs 2`) |
+                (results_semi$`Player 2` == player_2 & results_semi$`Legs 2` > results_semi$`Legs 1`)), " (",
+          round(100 * sum((results_semi$`Player 1` == player_2 & results_semi$`Legs 1` > results_semi$`Legs 2`) |
+                            (results_semi$`Player 2` == player_2 & results_semi$`Legs 2` > results_semi$`Legs 1`)) /
+                  sum(results_semi$`Player 1` == player_2 | results_semi$`Player 2` == player_2), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_bronze_1 <- {
+      if (nrow(results_bronze) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_bronze), " / ",
+          sum((results_bronze$`Player 1` == player_1 & results_bronze$`Legs 1` > results_bronze$`Legs 2`) |
+                (results_bronze$`Player 2` == player_1 & results_bronze$`Legs 2` > results_bronze$`Legs 1`)), " (",
+          round(100 * sum((results_bronze$`Player 1` == player_1 & results_bronze$`Legs 1` > results_bronze$`Legs 2`) |
+                            (results_bronze$`Player 2` == player_1 & results_bronze$`Legs 2` > results_bronze$`Legs 1`)) /
+                  sum(results_bronze$`Player 1` == player_1 | results_bronze$`Player 2` == player_1), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_bronze_2 <- {
+      if (nrow(results_bronze) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_bronze), " / ",
+          sum((results_bronze$`Player 1` == player_2 & results_bronze$`Legs 1` > results_bronze$`Legs 2`) |
+                (results_bronze$`Player 2` == player_2 & results_bronze$`Legs 2` > results_bronze$`Legs 1`)), " (",
+          round(100 * sum((results_bronze$`Player 1` == player_2 & results_bronze$`Legs 1` > results_bronze$`Legs 2`) |
+                            (results_bronze$`Player 2` == player_2 & results_bronze$`Legs 2` > results_bronze$`Legs 1`)) /
+                  sum(results_bronze$`Player 1` == player_2 | results_bronze$`Player 2` == player_2), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_final_1 <- {
+      if (nrow(results_final) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_final), " / ",
+          sum((results_final$`Player 1` == player_1 & results_final$`Legs 1` > results_final$`Legs 2`) |
+                (results_final$`Player 2` == player_1 & results_final$`Legs 2` > results_final$`Legs 1`)), " (",
+          round(100 * sum((results_final$`Player 1` == player_1 & results_final$`Legs 1` > results_final$`Legs 2`) |
+                            (results_final$`Player 2` == player_1 & results_final$`Legs 2` > results_final$`Legs 1`)) /
+                  sum(results_final$`Player 1` == player_1 | results_final$`Player 2` == player_1), 2), "%)"
+        )
+      }
+    }
+    
+    matches_played_final_2 <- {
+      if (nrow(results_final) == 0) {
+        "N/A"
+      } else {
+        paste0(
+          nrow(results_final), " / ",
+          sum((results_final$`Player 1` == player_2 & results_final$`Legs 1` > results_final$`Legs 2`) |
+                (results_final$`Player 2` == player_2 & results_final$`Legs 2` > results_final$`Legs 1`)), " (",
+          round(100 * sum((results_final$`Player 1` == player_2 & results_final$`Legs 1` > results_final$`Legs 2`) |
+                            (results_final$`Player 2` == player_2 & results_final$`Legs 2` > results_final$`Legs 1`)) /
+                  sum(results_final$`Player 1` == player_2 | results_final$`Player 2` == player_2), 2), "%)"
+        )
+      }
+    }
+    
+    
+    
     # TODO
+    
+    rivalries_df <- data.frame(
+      Player = c(matches_played_1, matches_played_group_1, matches_played_semi_1, matches_played_bronze_1, matches_played_final_1,
+                 "?", "?", "?", "?", "?"
+      ),
+      Statistics = c("Matches played / won",
+                        "@ Group phase",
+                        "@ Semi-finals",
+                        "@ Bronze matches",
+                        "@ Finals",
+                        "Legs played / won",
+                        "@ Group phase",
+                        "@ Semi-finals",
+                        "@ Bronze matches",
+                        "@ Finals"
+      ),
+      Rival = c(matches_played_2, matches_played_group_2, matches_played_semi_2, matches_played_bronze_2, matches_played_final_2,
+                "?", "?", "?", "?", "?"
+      )
+    )
+    return(rivalries_df)
   }
   
   calculateStats <- function(player_name) {
@@ -2451,7 +2648,7 @@ server <- function(input, output, session) {
                      "Legs played / won",
                      "Seasons played",
                      "Rounds played",
-                     "Top-4 finishes",
+                     "Semi-finals",
                      "Finals",
                      "Nights won",
                      "Total points",
@@ -2480,9 +2677,32 @@ server <- function(input, output, session) {
     return(stats_df)
   }
   
-  output$rivalries_table <- renderReactable({
+  output$rivalries_table_all <- renderReactable({
     reactable(
+      rivalries_data <- calculateRivalries(input$player, input$rival),
+      defaultPageSize = nrow(rivalries_data),
       # TODO
+      rowStyle = function(index) {
+        if (index == 5 | index == 10) {
+          list(borderBottom = "1px solid black")
+        } else {
+          NULL
+        }
+      },
+      columns = list(
+        Player = colDef(name = input$player, align = "center"),
+        Statistics = colDef(name = "", align = "center"),
+        Rival = colDef(name = input$rival, align = "center")
+      ),
+      highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
+      borderless = TRUE,
+      theme = reactableTheme(
+        headerStyle = list(
+          fontSize = "1.2em",
+          fontWeight = "bold",
+          borderBottom = "1px solid black"
+        )
+      )
     )
   })
   
@@ -2499,7 +2719,7 @@ server <- function(input, output, session) {
       },
       columns = list(
         All_Time = colDef(name = "All-time", align = "center"),
-        Statistics = colDef(name = "vs.", align = "center"),
+        Statistics = colDef(name = "", align = "center"),
         Current_Season = colDef(name = "Current season", align = "center")
       ),
       highlight = TRUE, outlined = TRUE, striped = TRUE, sortable = FALSE,
