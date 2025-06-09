@@ -552,7 +552,7 @@ server <- function(input, output, session) {
     standing <- player_data$`#`
     points <- player_data$Points
     if (length(standing) == 0) {
-      return("Haven't participated in this season yet!")
+      return("Hasn't participated in this season yet!")
     } else {
       HTML(paste0("#", standing, " with ", points, " point(s)"))
     }
@@ -3015,7 +3015,15 @@ server <- function(input, output, session) {
     if (sum(results_temp$`Player 1` == player_name | results_temp$`Player 2` == player_name) == 0) {
       
       matches_played_curr = "N/A"
+      matches_played_group_curr = "N/A"
+      matches_played_semi_curr = "N/A"
+      matches_played_bronze_curr = "N/A"
+      matches_played_final_curr = "N/A"
       legs_played_curr = "N/A"
+      legs_played_group_curr = "N/A"
+      legs_played_semi_curr = "N/A"
+      legs_played_bronze_curr = "N/A"
+      legs_played_final_curr = "N/A"
       seasons_played_curr = "N/A"
       rounds_played_curr = "N/A"
       nights_won_curr = "N/A"
