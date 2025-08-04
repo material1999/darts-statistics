@@ -342,7 +342,7 @@ ui <- tagList(
                                                 style = "padding-top: 20px;"
                                               ),
                                        ),
-                                       column(3,
+                                       column(4,
                                               div(class = "subtitle-container",
                                                   style = "padding-bottom: 20px;",
                                                   div(strong("Bio")),
@@ -364,7 +364,7 @@ ui <- tagList(
                                                   div(class = "bio", uiOutput("bio_worstseason"))
                                                   )
                                        ),
-                                       column(5,
+                                       column(4,
                                               div(class = "subtitle-container",
                                                   style = "padding-bottom: 20px;",
                                                   div(strong("Current season")),
@@ -1324,7 +1324,7 @@ server <- function(input, output, session) {
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
       "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
-      "#a6761d"
+      "#a6761d", "#00ced1"
     )
     
     results.long <- results.table %>%
@@ -1396,7 +1396,7 @@ server <- function(input, output, session) {
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
       "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
-      "#a6761d"
+      "#a6761d", "#00ced1"
     )
     
     overall_ranking_history$Round <- as.numeric(overall_ranking_history$Round)
@@ -1450,7 +1450,7 @@ server <- function(input, output, session) {
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
       "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
-      "#a6761d"
+      "#a6761d", "#00ced1"
     )
     
     results.long <- results.table %>%
