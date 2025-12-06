@@ -746,10 +746,10 @@ server <- function(input, output, session) {
       sapply(function(x) strsplit(x, " ")[[1]][1])
     
     if (length(playersWith180s) > 0) {
-      player180Counts <- table(playersWith180s)
+      player180Counts <- sort(table(playersWith180s), decreasing = TRUE)
       info.180s <- paste(
         paste(player180Counts, " (", names(player180Counts), ")", sep = ""),
-        collapse = ", "
+        collapse = "<br>"
       )
     } else {
       info.180s <- "0"
@@ -826,10 +826,10 @@ server <- function(input, output, session) {
       sapply(function(x) strsplit(x, " ")[[1]][1])
     
     if (length(playersWith180s) > 0) {
-      player180Counts <- table(playersWith180s)
+      player180Counts <- sort(table(playersWith180s), decreasing = TRUE)
       info.180s <- paste(
         paste(player180Counts, " (", names(player180Counts), ")", sep = ""),
-        collapse = ", "
+        collapse = "<br>"
       )
     } else {
       info.180s <- "0"
@@ -1498,7 +1498,7 @@ server <- function(input, output, session) {
       calculateSeasonInfo(input$season),
       columns = list(
         RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
-        Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
+        Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right", html = TRUE)
       ),
       rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
       borderless = TRUE, outlined = TRUE,
@@ -1626,7 +1626,7 @@ server <- function(input, output, session) {
       calculateRoundInfo(input$season, input$round),
       columns = list(
         RowHeader = colDef(headerClass = "hide-header", name = "", align = "left"),
-        Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right")
+        Stats = colDef(headerClass = "hide-header", name = "Stats", align = "right", html = TRUE)
       ),
       rownames = FALSE, highlight = FALSE, striped = TRUE, sortable = FALSE,
       borderless = TRUE, outlined = TRUE,
