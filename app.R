@@ -1137,167 +1137,161 @@ server <- function(input, output, session) {
   
   calculateStandingsTable <- function(season) {
     
-    results.season <- results %>%
-      filter(Season == season)
+    results.season <- results[results$Season == season, ]
     
     players <- unique(c(results.season$`Player 1`, results.season$`Player 2`))
+    
     results.table <- data.frame(
       Player = players,
-      `Nights won` = rep(0, length(players)),
-      `Finals` = rep(0, length(players)),
-      `Semi-finals` = rep(0, length(players)),
-      `Matches won` = rep(0, length(players)),
-      `Leg difference` = rep(0, length(players)),
-      `Legs won` = rep(0, length(players)),
-      Points = rep(0, length(players)),
+      `Nights won`     = 0,
+      Finals           = 0,
+      `Semi-finals`    = 0,
+      `Matches won`    = 0,
+      `Leg difference` = 0,
+      `Legs won`       = 0,
+      Points           = 0,
       stringsAsFactors = FALSE,
-      check.names = FALSE
+      check.names      = FALSE
     )
     
-    for (r in unique(results.season$`Round`)) {
+    for (r in unique(results.season$Round)) {
+      
       results.current <- calculateRoundStandingsTable(season, r)
-      for (j in 1:nrow(results.current)) {
-        if (j == 1) {
-          results.table[results.table$Player == results.current$Player[j], "Nights won"] <-
-            results.table[results.table$Player == results.current$Player[j], "Nights won"] + 1
-        }
-        if (j <= 2) {
-          results.table[results.table$Player == results.current$Player[j], "Finals"] <-
-            results.table[results.table$Player == results.current$Player[j], "Finals"] + 1
-        }
-        if (j <= 4) {
-          results.table[results.table$Player == results.current$Player[j], "Semi-finals"] <-
-            results.table[results.table$Player == results.current$Player[j], "Semi-finals"] + 1
-        }
-        results.table[results.table$Player == results.current$Player[j], "Points"] <-
-          results.table[results.table$Player == results.current$Player[j], "Points"] +
-          results.current$Points[j] + results.current$`Bonus points`[j]
-        results.table[results.table$Player == results.current$Player[j], "Legs won"] <-
-          results.table[results.table$Player == results.current$Player[j], "Legs won"] +
-          results.current$`Legs won`[j]
-        results.table[results.table$Player == results.current$Player[j], "Leg difference"] <-
-          results.table[results.table$Player == results.current$Player[j], "Leg difference"] +
-          results.current$`Leg difference`[j]
-        results.table[results.table$Player == results.current$Player[j], "Matches won"] <-
-          results.table[results.table$Player == results.current$Player[j], "Matches won"] +
-          results.current$`Matches won`[j]
-      }
+      
+      idx <- match(results.current$Player, results.table$Player)
+      
+      if (length(idx) >= 1) results.table$`Nights won`[idx[1]] <- results.table$`Nights won`[idx[1]] + 1
+      if (length(idx) >= 2) results.table$Finals[idx[1:2]] <- results.table$Finals[idx[1:2]] + 1
+      if (length(idx) >= 4) results.table$`Semi-finals`[idx[1:4]] <- results.table$`Semi-finals`[idx[1:4]] + 1
+      
+      results.table$Points[idx]        <- results.table$Points[idx] + results.current$Points + results.current$`Bonus points`
+      results.table$`Legs won`[idx]   <- results.table$`Legs won`[idx] + results.current$`Legs won`
+      results.table$`Leg difference`[idx] <- results.table$`Leg difference`[idx] + results.current$`Leg difference`
+      results.table$`Matches won`[idx] <- results.table$`Matches won`[idx] + results.current$`Matches won`
     }
     
-    results.table <- results.table %>%
-      arrange(desc(Points),
-              desc(`Nights won`),
-              desc(`Finals`),
-              desc(`Semi-finals`),
-              desc(`Matches won`),
-              desc(`Leg difference`),
-              desc(`Legs won`))
+    results.table <- results.table[order(
+      -results.table$Points,
+      -results.table$`Nights won`,
+      -results.table$Finals,
+      -results.table$`Semi-finals`,
+      -results.table$`Matches won`,
+      -results.table$`Leg difference`,
+      -results.table$`Legs won`
+    ), ]
     
-    results.table <- results.table %>%
-      mutate("#" = as.character(row_number())) %>%
-      select("#", everything())
+    results.table <- cbind("#" = as.character(seq_len(nrow(results.table))), results.table)
     
-    return(results.table)
+    results.table
   }
   
   calculatePositionsPerRoundTable <- function(season) {
     
-    results.season <- results %>%
-      filter(Season == season)
+    # Filter season results
+    results.season <- results[results$Season == season, ]
     
+    # Get all players sorted
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
-    results.table <- data.frame(
-      Player = players,
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    )
+    results.table <- data.frame(Player = players, stringsAsFactors = FALSE, check.names = FALSE)
     
-    for (r in unique(results.season$`Round`)) {
+    # Iterate over rounds
+    for (r in unique(results.season$Round)) {
       results.current <- calculateRoundStandingsTable(season, r)
-      new_column_name <- paste("R", as.character(r), sep = "")
-      results.table[, new_column_name] <- rep(NA, length(players))
-      for (j in 1:nrow(results.current)) {
-        position <- j
-        results.table[results.table$Player == results.current$Player[j], new_column_name] <- position
-      }
+      new_column_name <- paste0("R", r)
+      
+      # Initialize column with NA
+      results.table[[new_column_name]] <- NA_real_
+      
+      # Match players and assign positions vectorized
+      idx <- match(results.current$Player, results.table$Player)
+      results.table[[new_column_name]][idx] <- seq_len(nrow(results.current))
     }
     
-    results.table <- results.table %>%
-      rowwise() %>%
-      mutate(AveragePosition = round(mean(c_across(starts_with("R")), na.rm = TRUE), 2)) %>%
-      arrange(AveragePosition)
+    # Compute AveragePosition using rowMeans (vectorized)
+    round_cols <- grep("^R", names(results.table))
+    results.table$AveragePosition <- round(rowMeans(results.table[, round_cols], na.rm = TRUE), 2)
+    
+    # Sort by AveragePosition
+    results.table <- results.table[order(results.table$AveragePosition), ]
     
     return(results.table)
-    
   }
   
   calculatePointsPerRoundTable <- function(season) {
     
-    results.season <- results %>%
-      filter(Season == season)
+    # Filter results for the season
+    results.season <- results[results$Season == season, ]
     
+    # Get all players sorted
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
-    results.table <- data.frame(
-      Player = players,
-      stringsAsFactors = FALSE,
-      check.names = FALSE
-    )
+    results.table <- data.frame(Player = players, stringsAsFactors = FALSE, check.names = FALSE)
     
-    for (r in unique(results.season$`Round`)) {
+    # Iterate over rounds
+    for (r in unique(results.season$Round)) {
       results.current <- calculateRoundStandingsTable(season, r)
-      new_column_name <- paste("R", as.character(r), sep = "")
-      results.table[, new_column_name] <- NA
+      new_column_name <- paste0("R", r)
       
-      for (j in 1:nrow(results.current)) {
-        results.table[results.table$Player == results.current$Player[j], new_column_name] <- 
-          results.current$Points[j] + results.current$`Bonus points`[j]
-      }
+      # Initialize column with NA
+      results.table[[new_column_name]] <- NA_real_
+      
+      # Vectorized assignment of Points + Bonus points
+      idx <- match(results.current$Player, results.table$Player)
+      results.table[[new_column_name]][idx] <- results.current$Points + results.current$`Bonus points`
     }
     
-    results.table <- results.table %>%
-      rowwise() %>%
-      mutate(Total = sum(c_across(starts_with("R")), na.rm = TRUE)) %>%
-      mutate(Average = round(mean(c_across(starts_with("R")), na.rm = TRUE), 2)) %>%
-      arrange(desc(Total))
+    # Compute Total and Average vectorized
+    round_cols <- grep("^R", names(results.table))
+    results.table$Total   <- rowSums(results.table[, round_cols], na.rm = TRUE)
+    results.table$Average <- round(rowMeans(results.table[, round_cols], na.rm = TRUE), 2)
+    
+    # Sort by Total descending
+    results.table <- results.table[order(-results.table$Total), ]
     
     return(results.table)
   }
   
   createStandingsPlot <- function(season) {
     
-    results.season <- results %>%
-      filter(Season == season)
+    # Filter season results
+    results.season <- results[results$Season == season, ]
     
+    # Get all players sorted
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
     
+    # Initialize results.table
     results.table <- data.frame(
       Player = players,
+      `Round 0` = 0,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
     
-    results.table <- results.table %>%
-      mutate(`Round 0` = 0)
+    # Initialize cumulative points vector
+    cumulative_points <- numeric(length(players))
     
-    cumulative_points <- rep(0, length(players))
+    # Get round names
+    rounds <- unique(results.season$Round)
+    round_column_names <- paste("Round", rounds)
     
-    for (r in unique(results.season$`Round`)) {
-      round_column_name <- paste("Round", r, sep = " ")
-      results.table[, round_column_name] <- NA
-    }
+    # Initialize columns for each round
+    results.table[round_column_names] <- NA_real_
     
-    for (r in unique(results.season$`Round`)) {
+    # Compute cumulative points per round
+    for (r in rounds) {
       results.current <- calculateRoundStandingsTable(season, r)
-      round_column_name <- paste("Round", r, sep = " ")
+      round_column_name <- paste("Round", r)
       
-      for (j in 1:nrow(results.current)) {
-        round_points <- results.current$Points[j] + results.current$`Bonus points`[j]
-        
-        player_index <- which(results.table$Player == results.current$Player[j])
-        cumulative_points[player_index] <- cumulative_points[player_index] + round_points
-        
-        results.table[player_index, round_column_name] <- cumulative_points[player_index]
-      }
+      # Match players to table indices
+      idx <- match(results.current$Player, results.table$Player)
+      
+      # Compute points for this round
+      round_points <- results.current$Points + results.current$`Bonus points`
+      
+      # Update cumulative points vector
+      cumulative_points[idx] <- cumulative_points[idx] + round_points
+      
+      # Assign cumulative points to the table
+      results.table[idx, round_column_name] <- cumulative_points[idx]
     }
     
     my_custom_palette <- c(
@@ -1306,11 +1300,22 @@ server <- function(input, output, session) {
       "#a6761d", "#00ced1"
     )
     
-    results.long <- results.table %>%
-      pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "TotalPoints") %>%
-      mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
-      filter(!is.na(TotalPoints))
+    # Identify round columns
+    round_cols <- grep("^Round", names(results.table))
     
+    # Repeat players and collect round names and values
+    results.long <- data.frame(
+      Player      = rep(results.table$Player, times = length(round_cols)),
+      Round       = rep(as.numeric(sub("Round ", "", names(results.table)[round_cols])),
+                        each = nrow(results.table)),
+      TotalPoints = as.vector(as.matrix(results.table[, round_cols])),
+      stringsAsFactors = FALSE
+    )
+    
+    # Remove NA TotalPoints
+    results.long <- results.long[!is.na(results.long$TotalPoints), ]
+    
+    # Compute max round and max points
     max_round <- max(results.long$Round, na.rm = TRUE)
     max_points <- max(results.long$TotalPoints, na.rm = TRUE)
     
@@ -1336,41 +1341,60 @@ server <- function(input, output, session) {
   
   createOverallPositionsPlot <- function(season) {
     
-    results.season <- results %>%
-      filter(Season == season)
+    # Filter season results
+    results.season <- results[results$Season == season, ]
     
+    # Get all players sorted
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
     
+    # Initialize results.table
     results.table <- data.frame(
       Player = players,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
     
-    cumulative_points <- rep(0, length(players))
+    # Initialize cumulative points
+    cumulative_points <- numeric(length(players))
     
-    overall_ranking_history <- data.frame()
+    # Prepare list to store overall ranking history
+    rounds <- unique(results.season$Round)
+    overall_ranking_history <- vector("list", length(rounds))
+    names(overall_ranking_history) <- rounds
     
-    for (r in unique(results.season$`Round`)) {
+    # Loop over rounds
+    for (i in seq_along(rounds)) {
+      r <- rounds[i]
       results.current <- calculateRoundStandingsTable(season, r)
+      round_column_name <- paste("Round", r)
       
-      for (j in 1:nrow(results.current)) {
-        round_points <- results.current$Points[j] + results.current$`Bonus points`[j]
-        
-        player_index <- which(results.table$Player == results.current$Player[j])
-        cumulative_points[player_index] <- cumulative_points[player_index] + round_points
-        
-        results.table[player_index, paste("Round", r, sep = " ")] <- cumulative_points[player_index]
+      # Initialize column in results.table if it doesn't exist
+      if (!round_column_name %in% names(results.table)) {
+        results.table[[round_column_name]] <- NA_real_
       }
       
-      current_overall_ranks <- data.frame(Player = results.table$Player,
-                                          Cumulative_Points = cumulative_points) %>%
-        arrange(desc(Cumulative_Points)) %>%
-        mutate(Overall_Rank = row_number())
+      # Vectorized assignment of points
+      idx <- match(results.current$Player, results.table$Player)
+      round_points <- results.current$Points + results.current$`Bonus points`
+      cumulative_points[idx] <- cumulative_points[idx] + round_points
+      results.table[[round_column_name]][idx] <- cumulative_points[idx]
       
-      current_overall_ranks$Round <- r
-      overall_ranking_history <- rbind(overall_ranking_history, current_overall_ranks)
+      # Compute overall ranking for this round
+      current_ranks <- data.frame(
+        Player = results.table$Player,
+        Cumulative_Points = cumulative_points,
+        Round = r,
+        stringsAsFactors = FALSE
+      )
+      current_ranks <- current_ranks[order(-current_ranks$Cumulative_Points), ]
+      current_ranks$Overall_Rank <- seq_len(nrow(current_ranks))
+      
+      # Store in the list
+      overall_ranking_history[[i]] <- current_ranks
     }
+    
+    # Combine all rounds into one data frame
+    overall_ranking_history <- do.call(rbind, overall_ranking_history)
     
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
@@ -1402,28 +1426,36 @@ server <- function(input, output, session) {
   
   createPositionsPlot <- function(season) {
     
-    results.season <- results %>%
-      filter(Season == season)
+    # Filter season results
+    results.season <- results[results$Season == season, ]
     
+    # Get all players sorted
     players <- sort(unique(c(results.season$`Player 1`, results.season$`Player 2`)))
+    
+    # Initialize results.table
     results.table <- data.frame(
       Player = players,
       stringsAsFactors = FALSE,
       check.names = FALSE
     )
     
-    for (r in unique(results.season$`Round`)) {
-      round_column_name <- paste("Round", r, sep = " ")
-      results.table[, round_column_name] <- NA
-    }
+    # Get unique rounds
+    rounds <- unique(results.season$Round)
     
-    for (r in unique(results.season$`Round`)) {
+    # Initialize columns for each round
+    round_column_names <- paste("Round", rounds)
+    results.table[round_column_names] <- NA_real_
+    
+    # Assign positions per round vectorized
+    for (r in rounds) {
       results.current <- calculateRoundStandingsTable(season, r)
-      round_column_name <- paste("Round", r, sep = " ")
+      round_column_name <- paste("Round", r)
       
-      for (j in 1:nrow(results.current)) {
-        results.table[results.table$Player == results.current$Player[j], round_column_name] <- j
-      }
+      # Match players to indices in results.table
+      idx <- match(results.current$Player, results.table$Player)
+      
+      # Assign positions vectorized
+      results.table[[round_column_name]][idx] <- seq_len(nrow(results.current))
     }
     
     my_custom_palette <- c(
@@ -1432,12 +1464,23 @@ server <- function(input, output, session) {
       "#a6761d", "#00ced1"
     )
     
-    results.long <- results.table %>%
-      pivot_longer(cols = starts_with("Round"), names_to = "Round", values_to = "Position") %>%
-      mutate(Round = as.numeric(gsub("Round ", "", Round))) %>%
-      filter(!is.na(Position))
+    # Identify round columns
+    round_cols <- grep("^Round", names(results.table))
     
-    max_round <- max(results.long$Round, na.rm = TRUE)
+    # Create long-format data
+    results.long <- data.frame(
+      Player   = rep(results.table$Player, times = length(round_cols)),
+      Round    = rep(as.numeric(sub("Round ", "", names(results.table)[round_cols])),
+                     each = nrow(results.table)),
+      Position = as.vector(as.matrix(results.table[, round_cols])),
+      stringsAsFactors = FALSE
+    )
+    
+    # Remove NA positions
+    results.long <- results.long[!is.na(results.long$Position), ]
+    
+    # Compute max round and max position
+    max_round    <- max(results.long$Round, na.rm = TRUE)
     max_position <- max(results.long$Position, na.rm = TRUE)
     
     p <- ggplot(results.long, aes(x = Round, y = Position, group = Player, color = Player, 
