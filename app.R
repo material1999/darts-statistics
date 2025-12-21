@@ -701,61 +701,51 @@ server <- function(input, output, session) {
   
   calculateSeasonInfo <- function(season) {
     
-    results.filtered <- filter(results, Season == season)
-    bonus.filtered <- filter(bonus, Season == season)
+    results_f <- results[results$Season == season, ]
+    bonus_f   <- bonus[bonus$Season == season, ]
     
-    info.year <- results.filtered$Season[1]
-    info.rounds <- max(as.numeric(results.filtered$Round))
-    info.uniquePlayers <- length(unique(c(results.filtered$`Player 1`,
-                                          results.filtered$`Player 2`)))
+    rounds <- as.numeric(results_f$Round)
+    legs1  <- as.numeric(results_f$`Legs 1`)
+    legs2  <- as.numeric(results_f$`Legs 2`)
+    bonus_vals <- as.numeric(bonus_f$Bonus)
     
-    winner1 <- results.filtered %>%
-      filter(Phase == "Final", `Legs 1` > `Legs 2`) %>%
-      select(`Player 1`)
-    colnames(winner1) <- c("Player")
-    winner2 <- results.filtered %>%
-      filter(Phase == "Final", `Legs 2` > `Legs 1`) %>%
-      select(`Player 2`)
-    colnames(winner2) <- c("Player")
-    info.uniqueWinners <- nrow(unique(rbind(winner1, winner2)))
+    info.year <- results_f$Season[1]
+    info.rounds <- max(rounds, na.rm = TRUE)
+    info.uniquePlayers <- length(unique(c(results_f$`Player 1`, results_f$`Player 2`)))
+    info.matchesPlayed <- nrow(results_f)
+    info.legsPlayed <- sum(legs1 + legs2, na.rm = TRUE)
     
-    info.matchesPlayed <- nrow(results.filtered)
-    info.legsPlayed <- sum(as.numeric(c(results.filtered$`Legs 1`,
-                                        results.filtered$`Legs 2`)))
+    finals <- results_f$Phase == "Final"
+    winners <- ifelse(
+      legs1[finals] > legs2[finals],
+      results_f$`Player 1`[finals],
+      results_f$`Player 2`[finals]
+    )
+    info.uniqueWinners <- length(unique(winners))
     
-    validBonuses <- as.numeric(bonus.filtered$Bonus)
-    validBonuses <- validBonuses[validBonuses <= 170]
-    
-    if (length(validBonuses) > 0) {
-      highestBonus <- max(validBonuses, na.rm = TRUE)
-      highestCheckoutRow <- subset(bonus.filtered, as.numeric(Bonus) == highestBonus)
-      
-      if (nrow(highestCheckoutRow) > 0) {
-        playerFirstName <- strsplit(highestCheckoutRow$Player[1], " ")[[1]][1]
-        info.highestCheckout <- paste0(as.numeric(highestCheckoutRow$Bonus[1]), " (", playerFirstName, ")")
-      } else {
-        info.highestCheckout <- "No checkout"
-      }
+    valid_idx <- !is.na(bonus_vals) & bonus_vals <= 170
+    if (any(valid_idx)) {
+      max_bonus <- max(bonus_vals[valid_idx])
+      row <- which(bonus_vals == max_bonus)[1]
+      first_name <- sub(" .*", "", bonus_f$Player[row])
+      info.highestCheckout <- paste0(max_bonus, " (", first_name, ")")
     } else {
       info.highestCheckout <- "No checkout"
     }
     
-    playersWith180s <- bonus.filtered %>%
-      filter(as.numeric(Bonus) == 180) %>%
-      pull(Player) %>%
-      sapply(function(x) strsplit(x, " ")[[1]][1])
-    
-    if (length(playersWith180s) > 0) {
-      player180Counts <- sort(table(playersWith180s), decreasing = TRUE)
+    idx_180 <- bonus_vals == 180
+    if (any(idx_180, na.rm = TRUE)) {
+      names_180 <- sub(" .*", "", bonus_f$Player[idx_180])
+      counts <- sort(table(names_180), decreasing = TRUE)
       info.180s <- paste(
-        paste(player180Counts, " (", names(player180Counts), ")", sep = ""),
+        paste0(counts, " (", names(counts), ")"),
         collapse = "<br>"
       )
     } else {
       info.180s <- "0"
     }
     
-    info.table <- data.frame(
+    data.frame(
       RowHeader = c(
         "Year",
         "Rounds",
@@ -775,67 +765,51 @@ server <- function(input, output, session) {
         info.legsPlayed,
         info.highestCheckout,
         info.180s
-      )
+      ),
+      stringsAsFactors = FALSE
     )
-    
-    return(info.table)
   }
   
   calculateRoundInfo <- function(season, round) {
     
-    results.filtered <- filter(results, Season == season, Round == round)
-    bonus.filtered <- filter(bonus, Season == season, Round == round)
+    idx_res <- results$Season == season & results$Round == round
+    idx_bon <- bonus$Season == season & bonus$Round == round
     
-    info.date <- as.character(
-      paste(
-        sep = "-",
-        results.filtered$Season[1],
-        results.filtered$Month[1],
-        results.filtered$Day[1])
-    )
-    info.uniquePlayers <- length(unique(c(results.filtered$`Player 1`,
-                                          results.filtered$`Player 2`)))
-    info.matchesPlayed <- nrow(results.filtered)
-    info.legsPlayed <- sum(as.numeric(c(results.filtered$`Legs 1`,
-                                        results.filtered$`Legs 2`)))
+    res <- results[idx_res, ]
+    bon <- bonus[idx_bon, ]
     
-    if (nrow(bonus.filtered) > 0 && any(!is.na(as.numeric(bonus.filtered$Bonus)))) {
-      validBonuses <- as.numeric(bonus.filtered$Bonus)
-      validBonuses <- validBonuses[validBonuses <= 170]
-      
-      if (length(validBonuses) > 0) {
-        highestBonus <- max(validBonuses, na.rm = TRUE)
-        highestCheckoutRow <- subset(bonus.filtered, as.numeric(Bonus) == highestBonus)
-        
-        if (nrow(highestCheckoutRow) > 0) {
-          playerFirstName <- strsplit(highestCheckoutRow$Player[1], " ")[[1]][1]
-          info.highestCheckout <- paste0(as.numeric(highestCheckoutRow$Bonus[1]), " (", playerFirstName, ")")
-        } else {
-          info.highestCheckout <- "No checkout"
-        }
-      } else {
-        info.highestCheckout <- "No checkout"
-      }
+    legs1 <- as.numeric(res$`Legs 1`)
+    legs2 <- as.numeric(res$`Legs 2`)
+    bonus_vals <- as.numeric(bon$Bonus)
+    
+    info.date <- paste(res$Season[1], res$Month[1], res$Day[1], sep = "-")
+    info.uniquePlayers <- length(unique(c(res$`Player 1`, res$`Player 2`)))
+    info.matchesPlayed <- nrow(res)
+    info.legsPlayed <- sum(legs1 + legs2, na.rm = TRUE)
+    
+    valid_idx <- !is.na(bonus_vals) & bonus_vals <= 170
+    if (any(valid_idx)) {
+      max_bonus <- max(bonus_vals[valid_idx])
+      row <- which(bonus_vals == max_bonus)[1]
+      first_name <- sub(" .*", "", bon$Player[row])
+      info.highestCheckout <- paste0(max_bonus, " (", first_name, ")")
     } else {
       info.highestCheckout <- "No checkout"
     }
     
-    playersWith180s <- bonus.filtered %>%
-      filter(as.numeric(Bonus) == 180) %>%
-      pull(Player) %>%
-      sapply(function(x) strsplit(x, " ")[[1]][1])
-    
-    if (length(playersWith180s) > 0) {
-      player180Counts <- sort(table(playersWith180s), decreasing = TRUE)
+    idx_180 <- bonus_vals == 180
+    if (any(idx_180, na.rm = TRUE)) {
+      names_180 <- sub(" .*", "", bon$Player[idx_180])
+      counts <- sort(table(names_180), decreasing = TRUE)
       info.180s <- paste(
-        paste(player180Counts, " (", names(player180Counts), ")", sep = ""),
+        paste0(counts, " (", names(counts), ")"),
         collapse = "<br>"
       )
     } else {
       info.180s <- "0"
     }
     
-    info.table <- data.frame(
+    data.frame(
       RowHeader = c(
         "Date",
         "Players",
@@ -851,144 +825,175 @@ server <- function(input, output, session) {
         info.legsPlayed,
         info.highestCheckout,
         info.180s
-      )
+      ),
+      stringsAsFactors = FALSE
     )
-    
-    return(info.table)
   }
   
   calculateRoundTable <- function(season, round) {
     
-    results.round <- results %>%
-      filter(Season == season, Round == round, Phase == "Group phase")
+    idx <- results$Season == season &
+      results$Round == round &
+      results$Phase == "Group phase"
     
-    players <- unique(c(results.round$`Player 1`, results.round$`Player 2`))
-    results.table <- data.frame(
-      Player = players,
-      Points = rep(0, length(players)),
-      Wins = rep(0, length(players)),
-      Losses = rep(0, length(players)),
-      `Legs won` = rep(0, length(players)),
-      `Legs lost` = rep(0, length(players)),
-      `Leg difference` = rep(0, length(players)),
-      stringsAsFactors = FALSE,
-      check.names = FALSE
+    res <- results[idx, ]
+    
+    legs1 <- as.numeric(sub("\\*", "", res$`Legs 1`))
+    legs2 <- as.numeric(sub("\\*", "", res$`Legs 2`))
+    
+    long <- rbind(
+      data.frame(
+        Player = res$`Player 1`,
+        Opponent = res$`Player 2`,
+        LegsWon = legs1,
+        LegsLost = legs2,
+        Win = legs1 > legs2,
+        stringsAsFactors = FALSE
+      ),
+      data.frame(
+        Player = res$`Player 2`,
+        Opponent = res$`Player 1`,
+        LegsWon = legs2,
+        LegsLost = legs1,
+        Win = legs2 > legs1,
+        stringsAsFactors = FALSE
+      )
     )
     
-    for (i in 1:nrow(results.round)) {
-      player1 <- results.round$`Player 1`[i]
-      player2 <- results.round$`Player 2`[i]
-      result1 <- as.numeric(results.round$`Legs 1`[i])
-      result2 <- as.numeric(results.round$`Legs 2`[i])
+    agg <- aggregate(
+      cbind(
+        Points = Win,
+        Wins = Win,
+        Losses = !Win,
+        `Legs won` = LegsWon,
+        `Legs lost` = LegsLost
+      ) ~ Player,
+      data = long,
+      sum
+    )
+    
+    agg$`Leg difference` <- agg$`Legs won` - agg$`Legs lost`
+    
+    agg <- agg[order(
+      -agg$Points,
+      -agg$`Leg difference`,
+      -agg$`Legs won`
+    ), ]
+    
+    i <- 2
+    while (i <= nrow(agg)) {
       
-      results.table[results.table$Player == player1, "Legs won"] <-
-        results.table[results.table$Player == player1, "Legs won"] + result1
-      results.table[results.table$Player == player1, "Legs lost"] <-
-        results.table[results.table$Player == player1, "Legs lost"] + result2
-      results.table[results.table$Player == player2, "Legs won"] <-
-        results.table[results.table$Player == player2, "Legs won"] + result2
-      results.table[results.table$Player == player2, "Legs lost"] <-
-        results.table[results.table$Player == player2, "Legs lost"] + result1
+      tied <- agg$Points[i] == agg$Points[i-1] &&
+        agg$`Leg difference`[i] == agg$`Leg difference`[i-1] &&
+        agg$`Legs won`[i] == agg$`Legs won`[i-1]
       
-      if (result1 > result2) {
-        results.table[results.table$Player == player1, "Points"] <-
-          results.table[results.table$Player == player1, "Points"] + 1
-        results.table[results.table$Player == player1, "Wins"] <-
-          results.table[results.table$Player == player1, "Wins"] + 1
-        results.table[results.table$Player == player2, "Losses"] <-
-          results.table[results.table$Player == player2, "Losses"] + 1
-      } else {
-        results.table[results.table$Player == player2, "Points"] <-
-          results.table[results.table$Player == player2, "Points"] + 1
-        results.table[results.table$Player == player2, "Wins"] <-
-          results.table[results.table$Player == player2, "Wins"] + 1
-        results.table[results.table$Player == player1, "Losses"] <-
-          results.table[results.table$Player == player1, "Losses"] + 1
-      }
-    }
-    
-    results.table <- results.table %>%
-      mutate(`Leg difference` = `Legs won` - `Legs lost`)
-    
-    results.table <- results.table %>%
-      arrange(desc(Points), desc(`Leg difference`), desc(`Legs won`))
-    
-    for (i in 2:nrow(results.table)) {
-      if (results.table$Points[i-1] == results.table$Points[i] &
-          results.table$`Leg difference`[i-1] == results.table$`Leg difference`[i] &
-          results.table$`Legs won`[i-1] == results.table$`Legs won`[i]) {
-        change1 = results.table$Player[i-1]
-        change2 = results.table$Player[i]
-        for (j in 1:nrow(results.round)) {
-          player1 <- results.round$`Player 1`[j]
-          player2 <- results.round$`Player 2`[j]
-          result1 <- as.numeric(sub("\\*", "", results.round$`Legs 1`[j]))
-          result2 <- as.numeric(sub("\\*", "", results.round$`Legs 2`[j]))
-          if ((player1 == change1 & player2 == change2 & result2 > result1) |
-              player1 == change2 & player2 == change1 & result1 > result2) {
-            tmp_row <- results.table[i-1,]
-            results.table[i-1,] <- results.table[i,]
-            results.table[i,] <- tmp_row
+      if (tied) {
+        p1 <- agg$Player[i-1]
+        p2 <- agg$Player[i]
+        
+        h2h <- res[
+          (res$`Player 1` == p1 & res$`Player 2` == p2) |
+            (res$`Player 1` == p2 & res$`Player 2` == p1),
+        ]
+        
+        if (nrow(h2h) == 1) {
+          r1 <- as.numeric(sub("\\*", "", h2h$`Legs 1`))
+          r2 <- as.numeric(sub("\\*", "", h2h$`Legs 2`))
+          
+          winner <- if (h2h$`Player 1` == p1) {
+            ifelse(r1 > r2, p1, p2)
+          } else {
+            ifelse(r2 > r1, p1, p2)
+          }
+          
+          if (winner == p2) {
+            tmp <- agg[i-1, ]
+            agg[i-1, ] <- agg[i, ]
+            agg[i, ] <- tmp
           }
         }
       }
+      i <- i + 1
     }
     
-    results.table <- results.table %>%
-      mutate("#" = as.character(row_number())) %>%
-      select("#", everything())
+    agg <- cbind(
+      "#" = as.character(seq_len(nrow(agg))),
+      agg
+    )
     
-    return(results.table)
+    rownames(agg) <- NULL
+    agg
   }
   
   calculateSemiFinalTable <- function(season, round) {
     
-    results.semiFinals <- results %>%
-      filter(Season == season, Round == round, Phase == "Semi-final") %>%
-      select("Player 1", "Legs 1", "Legs 2", "Player 2")
+    idx <- results$Season == season &
+      results$Round == round &
+      results$Phase == "Semi-final"
     
-    return(results.semiFinals)
+    results[idx, c("Player 1", "Legs 1", "Legs 2", "Player 2")]
   }
   
   calculateFinalTable <- function(season, round) {
     
-    results.final <- results %>%
-      filter(Season == season, Round == round, Phase == "Final") %>%
-      select("Player 1", "Legs 1", "Legs 2", "Player 2")
+    idx <- results$Season == season &
+      results$Round == round &
+      results$Phase == "Final"
     
-    return(results.final)
+    results[idx, c("Player 1", "Legs 1", "Legs 2", "Player 2")]
   }
   
   calculateBronzeTable <- function(season, round) {
     
-    results.bronze <- results %>%
-      filter(Season == season, Round == round, Phase == "Bronze match") %>%
-      select("Player 1", "Legs 1", "Legs 2", "Player 2")
+    idx <- results$Season == season &
+      results$Round == round &
+      results$Phase == "Bronze match"
     
-    return(results.bronze)
+    results[idx, c("Player 1", "Legs 1", "Legs 2", "Player 2")]
   }
   
   calculateHighestCheckoutTable <- function(season, round) {
     
-    bonus.round.checkout <- bonus %>%
-      filter(Season == season, Round == round, as.numeric(Bonus) < 180) %>%
-      select("Player", "Bonus")
+    idx <- bonus$Season == season &
+      bonus$Round == round
     
-    colnames(bonus.round.checkout) <- c("Player", "Checkout")
+    bon <- bonus[idx, ]
     
-    return(bonus.round.checkout)
+    bonus_vals <- as.numeric(bon$Bonus)
+    keep <- !is.na(bonus_vals) & bonus_vals < 180
+    
+    out <- bon[keep, c("Player", "Bonus")]
+    names(out)[2] <- "Checkout"
+    
+    out
   }
   
   calculateOneEightyTable <- function(season, round) {
     
-    bonus.round.oneEighty <- bonus %>%
-      filter(Season == season, Round == round, as.numeric(Bonus) == 180) %>%
-      select("Player", "Bonus") %>%
-      group_by(Player) %>%
-      summarise("180s" = n()) %>%
-      arrange(desc(`180s`))
+    idx <- bonus$Season == season & bonus$Round == round
+    bon <- bonus[idx, ]
     
-    return(bonus.round.oneEighty)
+    bonus_vals <- as.numeric(bon$Bonus)
+    idx_180 <- !is.na(bonus_vals) & bonus_vals == 180
+    
+    if (!any(idx_180)) {
+      return(data.frame(
+        Player = character(0),
+        `180s` = integer(0),
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      ))
+    }
+    
+    counts <- sort(table(bon$Player[idx_180]), decreasing = TRUE)
+    
+    data.frame(
+      Player = names(counts),
+      `180s` = as.integer(counts),
+      stringsAsFactors = FALSE,
+      row.names = NULL,
+      check.names = FALSE
+    )
   }
   
   calculateRoundStandingsTable <- function(season, round) {
@@ -1483,14 +1488,11 @@ server <- function(input, output, session) {
   
   calculateRoundMatches <- function(season, round) {
     
-    results.matches <- results %>%
-      filter(Season == season, Round == round)
-    
-    results.matches <- results.matches %>%
-      mutate("#" = as.character(row_number())) %>%
-      select("#", everything())
-    
-    return(results.matches)
+    idx <- results$Season == season & results$Round == round
+    res <- results[idx, ]
+    res <- cbind(`#` = as.character(seq_len(nrow(res))), res)
+    rownames(res) <- NULL
+    return(res)
   }
   
   output$seasonInfoTable <- renderReactable({
