@@ -8,3 +8,6 @@ deploy.R
 rsconnect
 url.txt
 deploy_old.R
+renv
+renv.lock
+.Rprofile
