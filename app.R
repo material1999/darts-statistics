@@ -1209,7 +1209,7 @@ server <- function(input, output, session) {
     
     # Compute AveragePosition using rowMeans (vectorized)
     round_cols <- grep("^R", names(results.table))
-    results.table$AveragePosition <- round(rowMeans(results.table[, round_cols], na.rm = TRUE), 2)
+    results.table$AveragePosition <- round(rowMeans(results.table[, round_cols, drop = FALSE], na.rm = TRUE), 2)
     
     # Sort by AveragePosition
     results.table <- results.table[order(results.table$AveragePosition), ]
@@ -1241,9 +1241,8 @@ server <- function(input, output, session) {
     
     # Compute Total and Average vectorized
     round_cols <- grep("^R", names(results.table))
-    results.table$Total   <- rowSums(results.table[, round_cols], na.rm = TRUE)
-    results.table$Average <- round(rowMeans(results.table[, round_cols], na.rm = TRUE), 2)
-    
+    results.table$Total <- rowSums(results.table[, round_cols, drop = FALSE], na.rm = TRUE)
+    results.table$Average <- round(rowMeans(results.table[, round_cols, drop = FALSE], na.rm = TRUE), 2)
     # Sort by Total descending
     results.table <- results.table[order(-results.table$Total), ]
     
