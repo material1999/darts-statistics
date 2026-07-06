@@ -1296,7 +1296,7 @@ server <- function(input, output, session) {
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
       "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
-      "#a6761d", "#00ced1"
+      "#a6761d", "#00ced1", "#8b008b"
     )
     
     # Identify round columns
@@ -1398,7 +1398,7 @@ server <- function(input, output, session) {
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
       "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
-      "#a6761d", "#00ced1"
+      "#a6761d", "#00ced1", "#8b008b"
     )
     
     overall_ranking_history$Round <- as.numeric(overall_ranking_history$Round)
@@ -1460,7 +1460,7 @@ server <- function(input, output, session) {
     my_custom_palette <- c(
       "#1b9e77", "#d95f02", "#1f78b4", "#e7298a", "#66a61e", "#e6ab02",
       "#ff0000", "#666666", "#7570b3", "#b2df8a", "#fb9a99", "#000000",
-      "#a6761d", "#00ced1"
+      "#a6761d", "#00ced1", "#8b008b"
     )
     
     # Identify round columns
