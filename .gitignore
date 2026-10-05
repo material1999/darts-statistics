@@ -11,3 +11,5 @@ deploy_old.R
 renv
 renv.lock
 .Rprofile
+
+output
