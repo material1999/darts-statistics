@@ -2,9 +2,9 @@ import os
 import pandas as pd
 
 # Folders
-input_folder = "input"
-output_folder = "output"
-player_bio_file = f"{input_folder}/player_bio.csv"
+input_folder = "/Users/matevass/Documents/Programming/R/darts-statistics/results"
+output_folder = "/Users/matevass/Documents/Programming/R/darts-statistics/output"
+player_bio_file = "/Users/matevass/Documents/Programming/Astro/csukadarts/src/assets/players/player_bio.csv"
 
 # Create output folder if it doesn't exist
 os.makedirs(output_folder, exist_ok=True)
